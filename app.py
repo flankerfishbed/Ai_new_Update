@@ -10,9 +10,17 @@ HYDROPHOBIC = {"ALA", "VAL", "LEU", "ILE", "MET", "PHE", "TRP", "PRO"}
 CHARGED = {"LYS", "ARG", "HIS", "ASP", "GLU"}
 
 
-def parse_pdb_structure(pdb_io, chain_id="A"):
+def parse_pdb_structure(pdb_data, chain_id="A"):
+    """Parse a PDB file provided as bytes, string, or file-like object."""
+    if isinstance(pdb_data, (bytes, bytearray)):
+        handle = io.StringIO(pdb_data.decode())
+    elif isinstance(pdb_data, str):
+        handle = io.StringIO(pdb_data)
+    else:
+        # Assume a file-like object already opened in text mode
+        handle = pdb_data
     parser = PDBParser(QUIET=True)
-    structure = parser.get_structure("prot", pdb_io)
+    structure = parser.get_structure("prot", handle)
     model = structure[0]
     if chain_id not in model:
         raise ValueError(f"Chain {chain_id} not found")
@@ -38,50 +46,7 @@ def analyze_surface_residues(pdb_path, chain_id="A"):
     records = []
     for resnum, area in areas[chain_id].items():
         resname = area.residueType
-        sasa = area.total
-        if resname in HYDROPHOBIC:
-            prop = "hydrophobic"
-        elif resname in CHARGED:
-            prop = "charged"
-        else:
-            prop = "polar/other"
-        records.append({
-            "chain": chain_id,
-            "resnum": int(resnum),
-            "resname": resname,
-            "sasa": sasa,
-            "property": prop,
-        })
-    df = pd.DataFrame(records)
-    summary = {
-        "count": len(df),
-        "avg_sasa": df["sasa"].mean(),
-        "max_sasa": df["sasa"].max(),
-        "hydrophobic": (df["property"] == "hydrophobic").sum(),
-        "charged": (df["property"] == "charged").sum(),
-        "polar_other": (df["property"] == "polar/other").sum(),
-    }
-    return df, summary
-
-
-def suggest_peptides_with_ai(sequence, provider, api_key, model_name="gpt-3.5-turbo", num_peptides=3, surface_df=None):
-    if provider != "openai":
-        raise NotImplementedError("Only OpenAI provider implemented")
-    openai.api_key = api_key
-    context = f"Protein sequence:\n{sequence}\n"
-    if surface_df is not None:
-        context += "Surface residues:\n" + surface_df.to_csv(index=False)
-    prompt = (
-        f"Suggest {num_peptides} peptide candidates (8-15 aa) that bind the protein surface. "
-        "For each peptide, include a short explanation referencing residue numbers." )
-    messages = [
-        {"role": "system", "content": "You are an expert peptide designer."},
-        {"role": "user", "content": context + "\n" + prompt},
-    ]
-    try:
-        response = openai.ChatCompletion.create(model=model_name, messages=messages)
-        return response.choices[0].message.content.splitlines()
-    except Exception as e:
+@@ -85,49 +93,49 @@ def suggest_peptides_with_ai(sequence, provider, api_key, model_name="gpt-3.5-tu
         return [f"LLM call failed: {e}"]
 
 
@@ -107,7 +72,7 @@ def main():
 
     if uploaded is not None:
         pdb_bytes = uploaded.read()
-        parsed = parse_pdb_structure(io.BytesIO(pdb_bytes), chain_id)
+        parsed = parse_pdb_structure(pdb_bytes, chain_id)
         st.subheader("Sequence")
         st.code(parsed["sequence"])
         st.subheader("Residues")
