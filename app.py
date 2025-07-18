@@ -46,7 +46,7 @@ def analyze_surface_residues(pdb_path, chain_id="A"):
     records = []
     for resnum, area in areas[chain_id].items():
         resname = area.residueType
-@@ -85,49 +93,49 @@ def suggest_peptides_with_ai(sequence, provider, api_key, model_name="gpt-3.5-tu
+
         return [f"LLM call failed: {e}"]
 
 
