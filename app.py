@@ -1,0 +1,133 @@
+import io
+import streamlit as st
+import pandas as pd
+from Bio.PDB import PDBParser, PPBuilder
+import py3Dmol
+import freesasa
+import openai
+
+HYDROPHOBIC = {"ALA", "VAL", "LEU", "ILE", "MET", "PHE", "TRP", "PRO"}
+CHARGED = {"LYS", "ARG", "HIS", "ASP", "GLU"}
+
+
+def parse_pdb_structure(pdb_io, chain_id="A"):
+    parser = PDBParser(QUIET=True)
+    structure = parser.get_structure("prot", pdb_io)
+    model = structure[0]
+    if chain_id not in model:
+        raise ValueError(f"Chain {chain_id} not found")
+    chain = model[chain_id]
+    seq = ""
+    residues = []
+    ppb = PPBuilder()
+    for pp in ppb.build_peptides(chain):
+        seq += str(pp.get_sequence())
+    for res in chain:
+        if res.id[0] != " ":
+            continue
+        residues.append({"name": res.resname, "number": res.id[1]})
+    return {"sequence": seq, "residues": residues}
+
+
+def analyze_surface_residues(pdb_path, chain_id="A"):
+    structure = freesasa.Structure(pdb_path)
+    result = freesasa.calc(structure)
+    areas = result.residueAreas()
+    if chain_id not in areas:
+        raise ValueError(f"Chain {chain_id} not found in surface analysis")
+    records = []
+    for resnum, area in areas[chain_id].items():
+        resname = area.residueType
+        sasa = area.total
+        if resname in HYDROPHOBIC:
+            prop = "hydrophobic"
+        elif resname in CHARGED:
+            prop = "charged"
+        else:
+            prop = "polar/other"
+        records.append({
+            "chain": chain_id,
+            "resnum": int(resnum),
+            "resname": resname,
+            "sasa": sasa,
+            "property": prop,
+        })
+    df = pd.DataFrame(records)
+    summary = {
+        "count": len(df),
+        "avg_sasa": df["sasa"].mean(),
+        "max_sasa": df["sasa"].max(),
+        "hydrophobic": (df["property"] == "hydrophobic").sum(),
+        "charged": (df["property"] == "charged").sum(),
+        "polar_other": (df["property"] == "polar/other").sum(),
+    }
+    return df, summary
+
+
+def suggest_peptides_with_ai(sequence, provider, api_key, model_name="gpt-3.5-turbo", num_peptides=3, surface_df=None):
+    if provider != "openai":
+        raise NotImplementedError("Only OpenAI provider implemented")
+    openai.api_key = api_key
+    context = f"Protein sequence:\n{sequence}\n"
+    if surface_df is not None:
+        context += "Surface residues:\n" + surface_df.to_csv(index=False)
+    prompt = (
+        f"Suggest {num_peptides} peptide candidates (8-15 aa) that bind the protein surface. "
+        "For each peptide, include a short explanation referencing residue numbers." )
+    messages = [
+        {"role": "system", "content": "You are an expert peptide designer."},
+        {"role": "user", "content": context + "\n" + prompt},
+    ]
+    try:
+        response = openai.ChatCompletion.create(model=model_name, messages=messages)
+        return response.choices[0].message.content.splitlines()
+    except Exception as e:
+        return [f"LLM call failed: {e}"]
+
+
+def show_structure_3d(pdb_str):
+    view = py3Dmol.view(width=600, height=400)
+    view.addModel(pdb_str, 'pdb')
+    view.setStyle({'cartoon': {}})
+    view.zoomTo()
+    return view
+
+
+def main():
+    st.title("AI-Enhanced Peptide Generator")
+    st.sidebar.header("LLM Provider")
+    provider = st.sidebar.selectbox("Provider", ["openai"])
+    api_key = st.sidebar.text_input("API Key", type="password")
+    model_name = st.sidebar.text_input("Model", value="gpt-3.5-turbo")
+    st.header("Upload PDB")
+    uploaded = st.file_uploader("PDB file", type=["pdb"])
+    chain_id = st.text_input("Chain ID", value="A")
+    do_surface = st.checkbox("Run surface analysis")
+    num_pep = st.number_input("Number of peptides", min_value=1, max_value=10, value=3)
+
+    if uploaded is not None:
+        pdb_bytes = uploaded.read()
+        parsed = parse_pdb_structure(io.BytesIO(pdb_bytes), chain_id)
+        st.subheader("Sequence")
+        st.code(parsed["sequence"])
+        st.subheader("Residues")
+        st.write(pd.DataFrame(parsed["residues"]))
+        surface_df = None
+        if do_surface:
+            with open("_tmp.pdb", "wb") as f:
+                f.write(pdb_bytes)
+            surface_df, summary = analyze_surface_residues("_tmp.pdb", chain_id)
+            st.subheader("Surface Analysis")
+            st.write(surface_df)
+            st.write(summary)
+        st.subheader("3D View")
+        view = show_structure_3d(pdb_bytes.decode())
+        st.components.v1.html(view._make_html(), height=400, width=600)
+        if st.button("Suggest Peptides"):
+            peptides = suggest_peptides_with_ai(parsed["sequence"], provider, api_key, model_name, num_peptides=num_pep, surface_df=surface_df)
+            st.subheader("Peptide Suggestions")
+            for pep in peptides:
+                st.write(pep)
+
+if __name__ == "__main__":
+    main()
