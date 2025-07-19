@@ -39,7 +39,61 @@ def inject_css():
         .peptide-sequence { font-family: 'Courier New', monospace; font-size: 1.1rem; font-weight: 600; color: #6366f1; margin-right: 1rem; }
         .peptide-content { display: grid; grid-template-columns: 1fr 2fr; gap: 1.5rem; width: 100%; }
         .dataframe { background: rgba(255,255,255,0.05); border-radius: 12px; overflow: hidden; width: 100%; }
-        @media (max-width: 900px) { .main-container { padding: 0 0.5rem; } .kpi-grid { grid-template-columns: 1fr; } .peptide-content { grid-template-columns: 1fr; } }
+        
+        /* Highlighted generate button */
+        .stButton > button {
+            background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            padding: 1rem 3rem;
+            font-weight: 700;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+            box-shadow: rgba(99, 102, 241, 0.3) 0 4px 16px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .stButton > button:hover {
+            background: linear-gradient(135deg, #4f46e5 0%, #3730a3 100%);
+            transform: translateY(-2px);
+            box-shadow: rgba(99, 102, 241, 0.4) 0 8px 24px;
+        }
+        
+        .stButton > button:focus {
+            outline: 3px solid rgba(99, 102, 241, 0.5);
+            outline-offset: 2px;
+        }
+        
+        /* Centered surface analysis expander */
+        .surface-analysis-container {
+            display: flex;
+            justify-content: center;
+            margin: 2rem 0;
+        }
+        
+        .surface-analysis-expander {
+            max-width: 800px;
+            width: 100%;
+        }
+        
+        /* 3D viewer instructions */
+        .viewer-instructions {
+            background: rgba(99, 102, 241, 0.1);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            border-radius: 12px;
+            padding: 1rem;
+            margin: 1rem 0;
+            color: #6366f1;
+            font-size: 0.9rem;
+        }
+        
+        @media (max-width: 900px) { 
+            .main-container { padding: 0 0.5rem; } 
+            .kpi-grid { grid-template-columns: 1fr; } 
+            .peptide-content { grid-template-columns: 1fr; } 
+        }
     </style>
     """, unsafe_allow_html=True)
 
@@ -57,6 +111,7 @@ def main():
         st.markdown('<div class="main-container">', unsafe_allow_html=True)
         st.title("AI-Enhanced Peptide Generator")
         st.markdown("Upload a protein structure (PDB) and generate AI-suggested peptide candidates with detailed reasoning.")
+        
         # Sidebar
         with st.sidebar:
             st.header("Configuration")
@@ -83,6 +138,7 @@ def main():
                 - **Groq**: [console.groq.com](https://console.groq.com/)
                 - **Mistral**: [console.mistral.ai](https://console.mistral.ai/)
                 """)
+        
         # Main content (full width)
         st.header("Upload Protein Structure")
         st.markdown("""
@@ -91,6 +147,7 @@ def main():
         </div>
         """, unsafe_allow_html=True)
         uploaded_file = st.file_uploader("Choose a PDB file", type=['pdb'], help="Upload a PDB file to analyze")
+        
         if uploaded_file is not None:
             st.success(f"File uploaded successfully: {uploaded_file.name}")
             pdb_content = uploaded_file.read().decode('utf-8')
@@ -119,6 +176,7 @@ def main():
                 except Exception as e:
                     st.error(f"Error during parsing: {str(e)}")
                     return
+            
             if enable_surface_analysis:
                 st.header("Surface Analysis")
                 with st.spinner("Analyzing surface properties..."):
@@ -138,9 +196,14 @@ def main():
                             kpi_cols2 = st.columns(2)
                             with kpi_cols2[0]: kpi_tile(summary['polar_count'], "Polar/Other")
                             with kpi_cols2[1]: kpi_tile(f"{summary['avg_sasa']:.2f} Å²", "Avg SASA")
+                            
+                            # Centered surface analysis expander
+                            st.markdown('<div class="surface-analysis-container">', unsafe_allow_html=True)
                             with st.expander("Detailed Surface Analysis", expanded=False):
                                 surface_df = pd.DataFrame(surface_result['residues'])
                                 st.dataframe(surface_df, use_container_width=True)
+                            st.markdown('</div>', unsafe_allow_html=True)
+                            
                             st.session_state['surface_data'] = surface_result
                         else:
                             st.warning(f"Surface analysis failed: {surface_result['error']}")
@@ -148,9 +211,11 @@ def main():
                     except Exception as e:
                         st.warning(f"Surface analysis error: {str(e)}")
                         st.info("Continuing without surface analysis data...")
+            
             if api_key:
                 st.header("AI Peptide Generation")
-                if st.button("Generate Peptide Candidates", use_container_width=True):
+                st.markdown("**Click the button below to generate AI-suggested peptide candidates:**")
+                if st.button("🚀 GENERATE PEPTIDE CANDIDATES", use_container_width=True):
                     with st.spinner("Generating peptide candidates..."):
                         try:
                             llm_factory = LLMProviderFactory()
@@ -198,7 +263,20 @@ def main():
                             st.error(f"Error during peptide generation: {str(e)}")
             else:
                 st.info("Please enter your API key in the sidebar to generate peptides")
+            
             st.header("3D Visualization")
+            st.markdown("""
+            <div class="viewer-instructions">
+                <strong>💡 Interactive 3D Viewer:</strong> You can interact with the 3D structure below:
+                <ul style="margin: 0.5rem 0 0 0; padding-left: 1.5rem;">
+                    <li><strong>Rotate:</strong> Click and drag to rotate the molecule</li>
+                    <li><strong>Zoom:</strong> Scroll to zoom in/out</li>
+                    <li><strong>Pan:</strong> Right-click and drag to move the view</li>
+                    <li><strong>Reset:</strong> Double-click to reset the view</li>
+                </ul>
+            </div>
+            """, unsafe_allow_html=True)
+            
             if uploaded_file is not None and 'parsed_data' in st.session_state:
                 try:
                     visualizer = ProteinVisualizer()
@@ -207,6 +285,7 @@ def main():
                     st.error(f"Visualization error: {str(e)}")
             else:
                 st.info("Upload a PDB file to see the 3D structure visualization")
+        
         st.markdown('</div>', unsafe_allow_html=True)
 
 if __name__ == "__main__":
