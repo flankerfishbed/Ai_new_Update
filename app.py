@@ -56,12 +56,6 @@ def inject_css():
             margin-bottom: 1.5rem;
         }
         
-        .card-icon {
-            font-size: 1.5rem;
-            margin-right: 0.75rem;
-            color: #6366f1;
-        }
-        
         .card-title {
             font-size: 1.5rem;
             font-weight: 600;
@@ -73,21 +67,6 @@ def inject_css():
             font-size: 0.95rem;
             color: rgba(255, 255, 255, 0.7);
             margin: 0.5rem 0 0 0;
-        }
-        
-        /* Step indicators */
-        .step-indicator {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 32px;
-            height: 32px;
-            background: #6366f1;
-            color: white;
-            border-radius: 50%;
-            font-weight: 600;
-            font-size: 0.875rem;
-            margin-right: 0.75rem;
         }
         
         /* KPI tiles */
@@ -246,6 +225,22 @@ def inject_css():
             gap: 1.5rem;
         }
         
+        /* Upload area */
+        .upload-area {
+            border: 2px dashed rgba(255, 255, 255, 0.3);
+            border-radius: 12px;
+            padding: 3rem 2rem;
+            text-align: center;
+            background: rgba(255, 255, 255, 0.02);
+            margin: 1rem 0;
+        }
+        
+        .upload-text {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+        }
+        
         /* Responsive design */
         @media (max-width: 768px) {
             .main-container {
@@ -273,15 +268,13 @@ def inject_css():
     </style>
     """, unsafe_allow_html=True)
 
-def card(title, body, icon=None, subtitle=None):
+def card(title, body, subtitle=None):
     """Reusable card component"""
-    icon_html = f'<span class="card-icon">{icon}</span>' if icon else ''
     subtitle_html = f'<p class="card-subtitle">{subtitle}</p>' if subtitle else ''
     
     st.markdown(f"""
     <div class="card">
         <div class="card-header">
-            {icon_html}
             <div>
                 <h2 class="card-title">{title}</h2>
                 {subtitle_html}
@@ -293,13 +286,10 @@ def card(title, body, icon=None, subtitle=None):
     </div>
     """, unsafe_allow_html=True)
 
-def kpi_tile(value, label, icon=None):
+def kpi_tile(value, label):
     """KPI tile component"""
-    icon_html = f'<div style="font-size: 1.5rem; margin-bottom: 0.5rem;">{icon}</div>' if icon else ''
-    
     st.markdown(f"""
     <div class="kpi-tile">
-        {icon_html}
         <div class="kpi-value">{value}</div>
         <div class="kpi-label">{label}</div>
     </div>
@@ -319,34 +309,23 @@ def main():
         st.markdown('<div class="main-container">', unsafe_allow_html=True)
         
         # Header
-        card(
-            "AI-Enhanced Peptide Generator",
-            """
-            <p style="font-size: 1.1rem; color: rgba(255, 255, 255, 0.8); margin: 0;">
-                Upload a protein structure (PDB) and generate AI-suggested peptide candidates with detailed reasoning.
-            </p>
-            """,
-            icon="🧬"
-        )
+        st.title("AI-Enhanced Peptide Generator")
+        st.markdown("Upload a protein structure (PDB) and generate AI-suggested peptide candidates with detailed reasoning.")
         
         # Sidebar configuration
         with st.sidebar:
-            st.markdown("""
-            <div style="padding: 1rem 0;">
-                <h3 style="color: #ffffff; margin-bottom: 1rem;">⚙️ Configuration</h3>
-            </div>
-            """, unsafe_allow_html=True)
+            st.header("Configuration")
             
             # LLM Provider Selection
             provider_name = st.selectbox(
-                "🤖 LLM Provider",
+                "LLM Provider",
                 ["OpenAI", "Anthropic", "Groq", "Mistral"],
                 help="Select the AI provider for peptide generation"
             )
             
             # API Key input
             api_key = st.text_input(
-                "🔑 API Key",
+                "API Key",
                 type="password",
                 help="Enter your API key for the selected provider"
             )
@@ -360,7 +339,7 @@ def main():
             }
             
             model_name = st.selectbox(
-                "🧠 Model",
+                "Model",
                 model_options.get(provider_name, []),
                 help="Select the specific model to use"
             )
@@ -368,22 +347,18 @@ def main():
             st.markdown("---")
             
             # Analysis settings
-            st.markdown("""
-            <div style="padding: 1rem 0;">
-                <h3 style="color: #ffffff; margin-bottom: 1rem;">🔬 Analysis Settings</h3>
-            </div>
-            """, unsafe_allow_html=True)
+            st.header("Analysis Settings")
             
             # Chain selection
             chain_id = st.text_input(
-                "🔗 Chain ID",
+                "Chain ID",
                 value="A",
                 help="Enter the chain ID to analyze (default: A)"
             )
             
             # Number of peptides
             num_peptides = st.slider(
-                "📊 Number of Peptides",
+                "Number of Peptides",
                 min_value=1,
                 max_value=10,
                 value=3,
@@ -392,14 +367,14 @@ def main():
             
             # Surface analysis toggle
             enable_surface_analysis = st.checkbox(
-                "🌊 Enable Surface Analysis",
+                "Enable Surface Analysis",
                 value=True,
                 help="Calculate solvent-accessible surface area for residues"
             )
             
             # Help section
             st.markdown("---")
-            with st.expander("❓ Help"):
+            with st.expander("Help"):
                 st.markdown("""
                 1. **Upload PDB File**: Choose a protein structure file
                 2. **Configure AI**: Select provider and enter API key
@@ -407,7 +382,7 @@ def main():
                 4. **Generate**: Create AI-suggested peptide candidates
                 """)
             
-            with st.expander("🔑 API Keys"):
+            with st.expander("API Keys"):
                 st.markdown("""
                 - **OpenAI**: [platform.openai.com](https://platform.openai.com/api-keys)
                 - **Anthropic**: [console.anthropic.com](https://console.anthropic.com/)
@@ -420,15 +395,13 @@ def main():
         
         with col1:
             # File upload section
-            card(
-                "Upload Protein Structure",
-                """
-                <div style="text-align: center; padding: 2rem; border: 2px dashed rgba(255, 255, 255, 0.2); border-radius: 12px; background: rgba(255, 255, 255, 0.02);">
-                    <p style="color: rgba(255, 255, 255, 0.7); margin-bottom: 1rem;">Choose a PDB file to begin analysis</p>
-                </div>
-                """,
-                icon="📁"
-            )
+            st.header("Upload Protein Structure")
+            
+            st.markdown("""
+            <div class="upload-area">
+                <div class="upload-text">Choose a PDB file to begin analysis</div>
+            </div>
+            """, unsafe_allow_html=True)
             
             uploaded_file = st.file_uploader(
                 "Choose a PDB file",
@@ -438,18 +411,13 @@ def main():
             
             if uploaded_file is not None:
                 # Display file info
-                status_message(f"✅ File uploaded successfully: {uploaded_file.name}", "success")
+                st.success(f"File uploaded successfully: {uploaded_file.name}")
                 
                 # Read file content
                 pdb_content = uploaded_file.read().decode('utf-8')
                 
-                # Step 1: Parse PDB Structure
-                card(
-                    "Protein Structure Analysis",
-                    "",
-                    icon="🔍",
-                    subtitle="Step 1: Analyzing protein structure and extracting sequence information"
-                )
+                # Protein Structure Analysis
+                st.header("Protein Structure Analysis")
                 
                 with st.spinner("Analyzing protein structure..."):
                     try:
@@ -457,25 +425,25 @@ def main():
                         parsed_result = parser.parse_structure(pdb_content, chain_id)
                         
                         if parsed_result['success']:
-                            status_message("✅ Protein structure parsed successfully!", "success")
+                            st.success("Protein structure parsed successfully!")
                             
                             # Display KPI metrics
                             st.markdown('<div class="kpi-grid">', unsafe_allow_html=True)
                             col1, col2, col3 = st.columns(3)
                             
                             with col1:
-                                kpi_tile(parsed_result['chain_id'], "Chain ID", "🔗")
+                                kpi_tile(parsed_result['chain_id'], "Chain ID")
                             
                             with col2:
-                                kpi_tile(len(parsed_result['sequence']), "Sequence Length", "🧬")
+                                kpi_tile(len(parsed_result['sequence']), "Sequence Length")
                             
                             with col3:
-                                kpi_tile(len(parsed_result['residues']), "Total Residues", "📊")
+                                kpi_tile(len(parsed_result['residues']), "Total Residues")
                             
                             st.markdown('</div>', unsafe_allow_html=True)
                             
                             # Display sequence
-                            st.subheader("🧬 Protein Sequence")
+                            st.subheader("Protein Sequence")
                             st.markdown(f"""
                             <div class="sequence-display">
                                 {parsed_result['sequence']}
@@ -483,7 +451,7 @@ def main():
                             """, unsafe_allow_html=True)
                             
                             # Display residue information
-                            with st.expander("📋 Detailed Residue Information", expanded=False):
+                            with st.expander("Detailed Residue Information", expanded=False):
                                 residue_df = pd.DataFrame(parsed_result['residues'][:10])
                                 st.dataframe(residue_df, use_container_width=True)
                             
@@ -491,21 +459,16 @@ def main():
                             st.session_state['parsed_data'] = parsed_result
                             
                         else:
-                            status_message(f"❌ Error parsing structure: {parsed_result['error']}", "error")
+                            st.error(f"Error parsing structure: {parsed_result['error']}")
                             return
                             
                     except Exception as e:
-                        status_message(f"❌ Error during parsing: {str(e)}", "error")
+                        st.error(f"Error during parsing: {str(e)}")
                         return
                 
-                # Step 2: Surface Analysis (Optional)
+                # Surface Analysis (Optional)
                 if enable_surface_analysis:
-                    card(
-                        "Surface Analysis",
-                        "",
-                        icon="🌊",
-                        subtitle="Step 2: Calculating solvent-accessible surface area and residue properties"
-                    )
+                    st.header("Surface Analysis")
                     
                     with st.spinner("Analyzing surface properties..."):
                         try:
@@ -513,7 +476,7 @@ def main():
                             surface_result = analyzer.analyze_surface(pdb_content, chain_id)
                             
                             if surface_result['success']:
-                                status_message("✅ Surface analysis completed!", "success")
+                                st.success("Surface analysis completed!")
                                 
                                 # Display surface analysis results
                                 summary = surface_result['summary']
@@ -523,16 +486,16 @@ def main():
                                 col1, col2, col3, col4 = st.columns(4)
                                 
                                 with col1:
-                                    kpi_tile(summary['total_residues'], "Total Residues", "📊")
+                                    kpi_tile(summary['total_residues'], "Total Residues")
                                 
                                 with col2:
-                                    kpi_tile(summary['surface_residues'], "Surface Residues", "🌊")
+                                    kpi_tile(summary['surface_residues'], "Surface Residues")
                                 
                                 with col3:
-                                    kpi_tile(summary['hydrophobic_count'], "Hydrophobic", "💧")
+                                    kpi_tile(summary['hydrophobic_count'], "Hydrophobic")
                                 
                                 with col4:
-                                    kpi_tile(summary['charged_count'], "Charged", "⚡")
+                                    kpi_tile(summary['charged_count'], "Charged")
                                 
                                 st.markdown('</div>', unsafe_allow_html=True)
                                 
@@ -540,13 +503,13 @@ def main():
                                 col1, col2 = st.columns(2)
                                 
                                 with col1:
-                                    kpi_tile(summary['polar_count'], "Polar/Other", "🔬")
+                                    kpi_tile(summary['polar_count'], "Polar/Other")
                                 
                                 with col2:
-                                    kpi_tile(f"{summary['avg_sasa']:.2f} Å²", "Avg SASA", "📏")
+                                    kpi_tile(f"{summary['avg_sasa']:.2f} Å²", "Avg SASA")
                                 
                                 # Surface analysis table
-                                with st.expander("📊 Detailed Surface Analysis", expanded=False):
+                                with st.expander("Detailed Surface Analysis", expanded=False):
                                     surface_df = pd.DataFrame(surface_result['residues'])
                                     st.dataframe(surface_df, use_container_width=True)
                                 
@@ -554,24 +517,19 @@ def main():
                                 st.session_state['surface_data'] = surface_result
                                 
                             else:
-                                status_message(f"⚠️ Surface analysis failed: {surface_result['error']}", "warning")
-                                status_message("Continuing without surface analysis data...", "info")
+                                st.warning(f"Surface analysis failed: {surface_result['error']}")
+                                st.info("Continuing without surface analysis data...")
                                 
                         except Exception as e:
-                            status_message(f"⚠️ Surface analysis error: {str(e)}", "warning")
-                            status_message("Continuing without surface analysis data...", "info")
+                            st.warning(f"Surface analysis error: {str(e)}")
+                            st.info("Continuing without surface analysis data...")
                 
-                # Step 3: Peptide Generation
+                # Peptide Generation
                 if api_key:
-                    card(
-                        "AI Peptide Generation",
-                        "",
-                        icon="🤖",
-                        subtitle="Step 3: Generating AI-suggested peptide candidates with detailed reasoning"
-                    )
+                    st.header("AI Peptide Generation")
                     
-                    if st.button("🚀 Generate Peptide Candidates", use_container_width=True):
-                        with st.spinner("🤖 Generating peptide candidates..."):
+                    if st.button("Generate Peptide Candidates", use_container_width=True):
+                        with st.spinner("Generating peptide candidates..."):
                             try:
                                 # Initialize LLM provider
                                 llm_factory = LLMProviderFactory()
@@ -596,10 +554,10 @@ def main():
                                 peptides_result = generator.generate_peptides(context_data)
                                 
                                 if peptides_result['success']:
-                                    status_message(f"✅ Generated {len(peptides_result['peptides'])} peptide candidates!", "success")
+                                    st.success(f"Generated {len(peptides_result['peptides'])} peptide candidates!")
                                     
                                     # Display peptides
-                                    st.subheader("🧬 Generated Peptide Candidates")
+                                    st.subheader("Generated Peptide Candidates")
                                     
                                     for i, peptide in enumerate(peptides_result['peptides'], 1):
                                         st.markdown(f"""
@@ -629,30 +587,25 @@ def main():
                                     st.session_state['peptides'] = peptides_result['peptides']
                                     
                                 else:
-                                    status_message(f"❌ Peptide generation failed: {peptides_result['error']}", "error")
+                                    st.error(f"Peptide generation failed: {peptides_result['error']}")
                                     
                             except Exception as e:
-                                status_message(f"❌ Error during peptide generation: {str(e)}", "error")
+                                st.error(f"Error during peptide generation: {str(e)}")
                 else:
-                    status_message("🔑 Please enter your API key in the sidebar to generate peptides", "info")
+                    st.info("Please enter your API key in the sidebar to generate peptides")
         
         with col2:
             # 3D Visualization
-            card(
-                "3D Visualization",
-                "",
-                icon="🎯",
-                subtitle="Interactive protein structure visualization"
-            )
+            st.header("3D Visualization")
             
             if uploaded_file is not None and 'parsed_data' in st.session_state:
                 try:
                     visualizer = ProteinVisualizer()
                     visualizer.display_structure(pdb_content, chain_id)
                 except Exception as e:
-                    status_message(f"❌ Visualization error: {str(e)}", "error")
+                    st.error(f"Visualization error: {str(e)}")
             else:
-                status_message("📁 Upload a PDB file to see the 3D structure visualization", "info")
+                st.info("Upload a PDB file to see the 3D structure visualization")
         
         st.markdown('</div>', unsafe_allow_html=True)
 
