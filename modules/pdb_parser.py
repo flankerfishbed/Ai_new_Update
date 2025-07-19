@@ -60,15 +60,38 @@ class PDBParser:
                 # Parse structure
                 structure = self.parser.get_structure('protein', tmp_file_path)
                 
-                # Extract chain
-                if chain_id not in structure:
+                # Extract chain - handle different Biopython versions
+                try:
+                    # Try to get available chains
+                    available_chains = list(structure.keys())
+                except AttributeError:
+                    # For newer Biopython versions, iterate through chains
+                    available_chains = []
+                    for model in structure:
+                        for chain in model:
+                            available_chains.append(chain.get_id())
+                
+                # Check if requested chain exists
+                if chain_id not in available_chains:
                     return {
                         'success': False,
-                        'error': f"Chain '{chain_id}' not found in structure. Available chains: {list(structure.keys())}",
+                        'error': f"Chain '{chain_id}' not found in structure. Available chains: {available_chains}",
                         'explanation': f"Failed to find chain '{chain_id}' in the uploaded PDB structure."
                     }
                 
-                chain = structure[chain_id]
+                # Get the chain
+                chain = None
+                for model in structure:
+                    if chain_id in model:
+                        chain = model[chain_id]
+                        break
+                
+                if chain is None:
+                    return {
+                        'success': False,
+                        'error': f"Chain '{chain_id}' could not be accessed in structure.",
+                        'explanation': f"Failed to access chain '{chain_id}' in the uploaded PDB structure."
+                    }
                 
                 # Extract sequence and residue information
                 sequence = ""
@@ -214,4 +237,4 @@ class PDBParser:
             'type': 'unknown',
             'charge': 0,
             'polarity': 'unknown'
-        }) 
+        })
