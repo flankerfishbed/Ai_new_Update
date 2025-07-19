@@ -1,6 +1,0 @@
-streamlit
-biopython
-freesasa
-py3Dmol
-openai
-pandas
