@@ -150,35 +150,6 @@ def main():
         
         if uploaded_file is not None:
             st.success(f"File uploaded successfully: {uploaded_file.name}")
-            
-            # 3D Visualization - moved to top
-            st.header("3D Visualization")
-            st.markdown("""
-            <div class="viewer-instructions">
-                <strong>💡 Interactive 3D Viewer:</strong> You can interact with the 3D structure below:
-                <ul style="margin: 0.5rem 0 0 0; padding-left: 1.5rem;">
-                    <li><strong>Rotate:</strong> Click and drag to rotate the molecule</li>
-                    <li><strong>Zoom:</strong> Scroll to zoom in/out</li>
-                    <li><strong>Pan:</strong> Right-click and drag to move the view</li>
-                    <li><strong>Reset:</strong> Double-click to reset the view</li>
-                </ul>
-            </div>
-            """, unsafe_allow_html=True)
-            
-            # Centered 3D visualization container
-            st.markdown("""
-            <div style="display: flex; justify-content: center; margin: 2rem 0;">
-                <div style="max-width: 800px; width: 100%;">
-            """, unsafe_allow_html=True)
-            
-            try:
-                visualizer = ProteinVisualizer()
-                visualizer.display_structure(pdb_content, chain_id)
-            except Exception as e:
-                st.error(f"Visualization error: {str(e)}")
-            
-            st.markdown("</div></div>", unsafe_allow_html=True)
-            
             pdb_content = uploaded_file.read().decode('utf-8')
             st.header("Protein Structure Analysis")
             with st.spinner("Analyzing protein structure..."):
@@ -292,6 +263,28 @@ def main():
                             st.error(f"Error during peptide generation: {str(e)}")
             else:
                 st.info("Please enter your API key in the sidebar to generate peptides")
+            
+            st.header("3D Visualization")
+            st.markdown("""
+            <div class="viewer-instructions">
+                <strong>💡 Interactive 3D Viewer:</strong> You can interact with the 3D structure below:
+                <ul style="margin: 0.5rem 0 0 0; padding-left: 1.5rem;">
+                    <li><strong>Rotate:</strong> Click and drag to rotate the molecule</li>
+                    <li><strong>Zoom:</strong> Scroll to zoom in/out</li>
+                    <li><strong>Pan:</strong> Right-click and drag to move the view</li>
+                    <li><strong>Reset:</strong> Double-click to reset the view</li>
+                </ul>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            if uploaded_file is not None and 'parsed_data' in st.session_state:
+                try:
+                    visualizer = ProteinVisualizer()
+                    visualizer.display_structure(pdb_content, chain_id)
+                except Exception as e:
+                    st.error(f"Visualization error: {str(e)}")
+            else:
+                st.info("Upload a PDB file to see the 3D structure visualization")
         
         st.markdown('</div>', unsafe_allow_html=True)
 
