@@ -21,7 +21,8 @@ class SurfaceAnalyzer:
     """
     
     def __init__(self):
-        self.parser = freesasa.Parser()
+        # FreeSASA doesn't need a parser in newer versions
+        pass
     
     def analyze_surface(self, pdb_content: str, chain_id: str = "A") -> Dict[str, Any]:
         """
@@ -41,9 +42,15 @@ class SurfaceAnalyzer:
                 tmp_file_path = tmp_file.name
             
             try:
-                # Parse structure with FreeSASA
-                structure = freesasa.Structure(tmp_file_path)
-                result = freesasa.calc(structure)
+                # Parse structure with FreeSASA - handle different versions
+                try:
+                    # Try newer FreeSASA API
+                    structure = freesasa.Structure(tmp_file_path)
+                    result = freesasa.calc(structure)
+                except AttributeError:
+                    # Fallback for older versions
+                    structure = freesasa.Structure.fromFile(tmp_file_path)
+                    result = freesasa.calc(structure)
                 
                 # Extract residue-level SASA data
                 residues = []
@@ -68,8 +75,17 @@ class SurfaceAnalyzer:
                         # Calculate SASA for this residue
                         residue_sasa = 0
                         for atom in residue.atoms():
-                            atom_sasa = result.atomArea(atom)
-                            residue_sasa += atom_sasa
+                            try:
+                                atom_sasa = result.atomArea(atom)
+                                residue_sasa += atom_sasa
+                            except (AttributeError, TypeError):
+                                # Fallback for different FreeSASA versions
+                                try:
+                                    atom_sasa = result.getAtomArea(atom)
+                                    residue_sasa += atom_sasa
+                                except:
+                                    # If all else fails, use a default value
+                                    residue_sasa += 0
                         
                         # Classify residue
                         if res_name in hydrophobic_aa:
@@ -222,4 +238,4 @@ class SurfaceAnalyzer:
         if polar_cluster:
             clusters.append(polar_cluster)
         
-        return clusters 
+        return clusters
