@@ -32,9 +32,10 @@ def inject_css():
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
         }
         
-        /* Container with full width */
+        /* Container with max-width and centering */
         .main-container {
-            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
             padding: 0 2rem;
         }
         
@@ -66,6 +67,21 @@ def inject_css():
             font-size: 0.95rem;
             color: rgba(255, 255, 255, 0.7);
             margin: 0.5rem 0 0 0;
+        }
+        
+        /* Step indicators */
+        .step-indicator {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            background: #6366f1;
+            color: white;
+            border-radius: 50%;
+            font-weight: 600;
+            font-size: 0.875rem;
+            margin-right: 0.75rem;
         }
         
         /* KPI tiles */
@@ -387,221 +403,225 @@ def main():
                 - **Mistral**: [console.mistral.ai](https://console.mistral.ai/)
                 """)
         
-        # Main content area - full width layout
-        # File upload section
-        card(
-            "Upload Protein Structure",
-            """
-            <div style="text-align: center; padding: 2rem; border: 2px dashed rgba(255, 255, 255, 0.2); border-radius: 12px; background: rgba(255, 255, 255, 0.02);">
-                <p style="color: rgba(255, 255, 255, 0.7); margin-bottom: 1rem;">Choose a PDB file to begin analysis</p>
-            </div>
-            """
-        )
+        # Main content area
+        col1, col2 = st.columns([2, 1])
         
-        uploaded_file = st.file_uploader(
-            "Choose a PDB file",
-            type=['pdb'],
-            help="Upload a PDB file to analyze"
-        )
-        
-        if uploaded_file is not None:
-            # Display file info
-            status_message(f"File uploaded successfully: {uploaded_file.name}", "success")
-            
-            # Read file content
-            pdb_content = uploaded_file.read().decode('utf-8')
-            
-            # Protein Structure Analysis
+        with col1:
+            # File upload section
             card(
-                "Protein Structure Analysis",
-                "",
-                subtitle="Analyzing protein structure and extracting sequence information"
+                "Upload Protein Structure",
+                """
+                <div style="text-align: center; padding: 2rem; border: 2px dashed rgba(255, 255, 255, 0.2); border-radius: 12px; background: rgba(255, 255, 255, 0.02);">
+                    <p style="color: rgba(255, 255, 255, 0.7); margin-bottom: 1rem;">Choose a PDB file to begin analysis</p>
+                </div>
+                """
             )
             
-            with st.spinner("Analyzing protein structure..."):
-                try:
-                    parser = PDBParser()
-                    parsed_result = parser.parse_structure(pdb_content, chain_id)
-                    
-                    if parsed_result['success']:
-                        status_message("Protein structure parsed successfully!", "success")
-                        
-                        # Display KPI metrics
-                        st.markdown('<div class="kpi-grid">', unsafe_allow_html=True)
-                        col1, col2, col3 = st.columns(3)
-                        
-                        with col1:
-                            kpi_tile(parsed_result['chain_id'], "Chain ID")
-                        
-                        with col2:
-                            kpi_tile(len(parsed_result['sequence']), "Sequence Length")
-                        
-                        with col3:
-                            kpi_tile(len(parsed_result['residues']), "Total Residues")
-                        
-                        st.markdown('</div>', unsafe_allow_html=True)
-                        
-                        # Display sequence
-                        st.subheader("Protein Sequence")
-                        st.markdown(f"""
-                        <div class="sequence-display">
-                            {parsed_result['sequence']}
-                        </div>
-                        """, unsafe_allow_html=True)
-                        
-                        # Display residue information
-                        with st.expander("Detailed Residue Information", expanded=False):
-                            residue_df = pd.DataFrame(parsed_result['residues'][:10])
-                            st.dataframe(residue_df, use_container_width=True)
-                        
-                        # Store parsed data in session state
-                        st.session_state['parsed_data'] = parsed_result
-                        
-                    else:
-                        status_message(f"Error parsing structure: {parsed_result['error']}", "error")
-                        return
-                        
-                except Exception as e:
-                    status_message(f"Error during parsing: {str(e)}", "error")
-                    return
+            uploaded_file = st.file_uploader(
+                "Choose a PDB file",
+                type=['pdb'],
+                help="Upload a PDB file to analyze"
+            )
             
-            # Surface Analysis (Optional)
-            if enable_surface_analysis:
+            if uploaded_file is not None:
+                # Display file info
+                status_message(f"✅ File uploaded successfully: {uploaded_file.name}", "success")
+                
+                # Read file content
+                pdb_content = uploaded_file.read().decode('utf-8')
+                
+                # Protein Structure Analysis
                 card(
-                    "Surface Analysis",
+                    "Protein Structure Analysis",
                     "",
-                    subtitle="Calculating solvent-accessible surface area and residue properties"
+                    subtitle="Step 1: Analyzing protein structure and extracting sequence information"
                 )
                 
-                with st.spinner("Analyzing surface properties..."):
+                with st.spinner("Analyzing protein structure..."):
                     try:
-                        analyzer = SurfaceAnalyzer()
-                        surface_result = analyzer.analyze_surface(pdb_content, chain_id)
+                        parser = PDBParser()
+                        parsed_result = parser.parse_structure(pdb_content, chain_id)
                         
-                        if surface_result['success']:
-                            status_message("Surface analysis completed!", "success")
+                        if parsed_result['success']:
+                            status_message("✅ Protein structure parsed successfully!", "success")
                             
-                            # Display surface analysis results
-                            summary = surface_result['summary']
-                            
-                            # Create KPI grid for surface metrics
+                            # Display KPI metrics
                             st.markdown('<div class="kpi-grid">', unsafe_allow_html=True)
-                            col1, col2, col3, col4 = st.columns(4)
+                            col1, col2, col3 = st.columns(3)
                             
                             with col1:
-                                kpi_tile(summary['total_residues'], "Total Residues")
+                                kpi_tile(parsed_result['chain_id'], "Chain ID")
                             
                             with col2:
-                                kpi_tile(summary['surface_residues'], "Surface Residues")
+                                kpi_tile(len(parsed_result['sequence']), "Sequence Length")
                             
                             with col3:
-                                kpi_tile(summary['hydrophobic_count'], "Hydrophobic")
-                            
-                            with col4:
-                                kpi_tile(summary['charged_count'], "Charged")
+                                kpi_tile(len(parsed_result['residues']), "Total Residues")
                             
                             st.markdown('</div>', unsafe_allow_html=True)
                             
-                            # Additional metrics
-                            col1, col2 = st.columns(2)
+                            # Display sequence
+                            st.subheader("Protein Sequence")
+                            st.markdown(f"""
+                            <div class="sequence-display">
+                                {parsed_result['sequence']}
+                            </div>
+                            """, unsafe_allow_html=True)
                             
-                            with col1:
-                                kpi_tile(summary['polar_count'], "Polar/Other")
+                            # Display residue information
+                            with st.expander("Detailed Residue Information", expanded=False):
+                                residue_df = pd.DataFrame(parsed_result['residues'][:10])
+                                st.dataframe(residue_df, use_container_width=True)
                             
-                            with col2:
-                                kpi_tile(f"{summary['avg_sasa']:.2f} Å²", "Avg SASA")
-                            
-                            # Surface analysis table
-                            with st.expander("Detailed Surface Analysis", expanded=False):
-                                surface_df = pd.DataFrame(surface_result['residues'])
-                                st.dataframe(surface_df, use_container_width=True)
-                            
-                            # Store surface data in session state
-                            st.session_state['surface_data'] = surface_result
+                            # Store parsed data in session state
+                            st.session_state['parsed_data'] = parsed_result
                             
                         else:
-                            status_message(f"Surface analysis failed: {surface_result['error']}", "warning")
-                            status_message("Continuing without surface analysis data...", "info")
+                            status_message(f"❌ Error parsing structure: {parsed_result['error']}", "error")
+                            return
                             
                     except Exception as e:
-                        status_message(f"Surface analysis error: {str(e)}", "warning")
-                        status_message("Continuing without surface analysis data...", "info")
-            
-            # Peptide Generation
-            if api_key:
-                card(
-                    "AI Peptide Generation",
-                    "",
-                    subtitle="Generating AI-suggested peptide candidates with detailed reasoning"
-                )
+                        status_message(f"❌ Error during parsing: {str(e)}", "error")
+                        return
                 
-                if st.button("Generate Peptide Candidates", use_container_width=True):
-                    with st.spinner("Generating peptide candidates..."):
+                # Surface Analysis (Optional)
+                if enable_surface_analysis:
+                    card(
+                        "Surface Analysis",
+                        "",
+                        subtitle="Step 2: Calculating solvent-accessible surface area and residue properties"
+                    )
+                    
+                    with st.spinner("Analyzing surface properties..."):
                         try:
-                            # Initialize LLM provider
-                            llm_factory = LLMProviderFactory()
-                            llm_provider = llm_factory.create_provider(provider_name, api_key, model_name)
+                            analyzer = SurfaceAnalyzer()
+                            surface_result = analyzer.analyze_surface(pdb_content, chain_id)
                             
-                            # Initialize peptide generator
-                            generator = PeptideGenerator(llm_provider)
-                            
-                            # Prepare context data
-                            context_data = {
-                                'sequence': parsed_result['sequence'],
-                                'residues': parsed_result['residues'],
-                                'chain_id': chain_id,
-                                'num_peptides': num_peptides
-                            }
-                            
-                            # Add surface data if available
-                            if enable_surface_analysis and 'surface_data' in st.session_state:
-                                context_data['surface_data'] = st.session_state['surface_data']
-                            
-                            # Generate peptides
-                            peptides_result = generator.generate_peptides(context_data)
-                            
-                            if peptides_result['success']:
-                                status_message(f"Generated {len(peptides_result['peptides'])} peptide candidates!", "success")
+                            if surface_result['success']:
+                                status_message("✅ Surface analysis completed!", "success")
                                 
-                                # Display peptides
-                                st.subheader("Generated Peptide Candidates")
+                                # Display surface analysis results
+                                summary = surface_result['summary']
                                 
-                                for i, peptide in enumerate(peptides_result['peptides'], 1):
-                                    st.markdown(f"""
-                                    <div class="peptide-card">
-                                        <div class="peptide-header">
-                                            <span class="peptide-sequence">Peptide {i}: {peptide['sequence']}</span>
-                                        </div>
-                                        <div class="peptide-content">
-                                            <div>
-                                                <h5 style="color: #ffffff; margin-bottom: 0.5rem;">Properties:</h5>
-                                                <ul style="color: rgba(255, 255, 255, 0.8);">
-                                                    <li><strong>Length:</strong> {peptide['properties']['length']}</li>
-                                                    <li><strong>Net Charge:</strong> {peptide['properties']['net_charge']}</li>
-                                                    <li><strong>Hydrophobicity:</strong> {peptide['properties']['hydrophobicity']}</li>
-                                                    <li><strong>Motifs:</strong> {', '.join(peptide['properties']['motifs'])}</li>
-                                                </ul>
-                                            </div>
-                                            <div>
-                                                <h5 style="color: #ffffff; margin-bottom: 0.5rem;">Reasoning:</h5>
-                                                <p style="color: rgba(255, 255, 255, 0.8); line-height: 1.6;">{peptide['explanation']}</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    """, unsafe_allow_html=True)
+                                # Create KPI grid for surface metrics
+                                st.markdown('<div class="kpi-grid">', unsafe_allow_html=True)
+                                col1, col2, col3, col4 = st.columns(4)
                                 
-                                # Store peptides in session state
-                                st.session_state['peptides'] = peptides_result['peptides']
+                                with col1:
+                                    kpi_tile(summary['total_residues'], "Total Residues")
+                                
+                                with col2:
+                                    kpi_tile(summary['surface_residues'], "Surface Residues")
+                                
+                                with col3:
+                                    kpi_tile(summary['hydrophobic_count'], "Hydrophobic")
+                                
+                                with col4:
+                                    kpi_tile(summary['charged_count'], "Charged")
+                                
+                                st.markdown('</div>', unsafe_allow_html=True)
+                                
+                                # Additional metrics
+                                col1, col2 = st.columns(2)
+                                
+                                with col1:
+                                    kpi_tile(summary['polar_count'], "Polar/Other")
+                                
+                                with col2:
+                                    kpi_tile(f"{summary['avg_sasa']:.2f} Å²", "Avg SASA")
+                                
+                                # Surface analysis table
+                                with st.expander("Detailed Surface Analysis", expanded=False):
+                                    surface_df = pd.DataFrame(surface_result['residues'])
+                                    st.dataframe(surface_df, use_container_width=True)
+                                
+                                # Store surface data in session state
+                                st.session_state['surface_data'] = surface_result
                                 
                             else:
-                                status_message(f"Peptide generation failed: {peptides_result['error']}", "error")
+                                status_message(f"⚠️ Surface analysis failed: {surface_result['error']}", "warning")
+                                status_message("Continuing without surface analysis data...", "info")
                                 
                         except Exception as e:
-                            status_message(f"Error during peptide generation: {str(e)}", "error")
-            else:
-                status_message("Please enter your API key in the sidebar to generate peptides", "info")
-            
-            # 3D Visualization - full width
+                            status_message(f"⚠️ Surface analysis error: {str(e)}", "warning")
+                            status_message("Continuing without surface analysis data...", "info")
+                
+                # Peptide Generation
+                if api_key:
+                    card(
+                        "AI Peptide Generation",
+                        "",
+                        subtitle="Step 3: Generating AI-suggested peptide candidates with detailed reasoning"
+                    )
+                    
+                    if st.button("Generate Peptide Candidates", use_container_width=True):
+                        with st.spinner("Generating peptide candidates..."):
+                            try:
+                                # Initialize LLM provider
+                                llm_factory = LLMProviderFactory()
+                                llm_provider = llm_factory.create_provider(provider_name, api_key, model_name)
+                                
+                                # Initialize peptide generator
+                                generator = PeptideGenerator(llm_provider)
+                                
+                                # Prepare context data
+                                context_data = {
+                                    'sequence': parsed_result['sequence'],
+                                    'residues': parsed_result['residues'],
+                                    'chain_id': chain_id,
+                                    'num_peptides': num_peptides
+                                }
+                                
+                                # Add surface data if available
+                                if enable_surface_analysis and 'surface_data' in st.session_state:
+                                    context_data['surface_data'] = st.session_state['surface_data']
+                                
+                                # Generate peptides
+                                peptides_result = generator.generate_peptides(context_data)
+                                
+                                if peptides_result['success']:
+                                    status_message(f"✅ Generated {len(peptides_result['peptides'])} peptide candidates!", "success")
+                                    
+                                    # Display peptides
+                                    st.subheader("Generated Peptide Candidates")
+                                    
+                                    for i, peptide in enumerate(peptides_result['peptides'], 1):
+                                        st.markdown(f"""
+                                        <div class="peptide-card">
+                                            <div class="peptide-header">
+                                                <span class="peptide-sequence">Peptide {i}: {peptide['sequence']}</span>
+                                            </div>
+                                            <div class="peptide-content">
+                                                <div>
+                                                    <h5 style="color: #ffffff; margin-bottom: 0.5rem;">Properties:</h5>
+                                                    <ul style="color: rgba(255, 255, 255, 0.8);">
+                                                        <li><strong>Length:</strong> {peptide['properties']['length']}</li>
+                                                        <li><strong>Net Charge:</strong> {peptide['properties']['net_charge']}</li>
+                                                        <li><strong>Hydrophobicity:</strong> {peptide['properties']['hydrophobicity']}</li>
+                                                        <li><strong>Motifs:</strong> {', '.join(peptide['properties']['motifs'])}</li>
+                                                    </ul>
+                                                </div>
+                                                <div>
+                                                    <h5 style="color: #ffffff; margin-bottom: 0.5rem;">Reasoning:</h5>
+                                                    <p style="color: rgba(255, 255, 255, 0.8); line-height: 1.6;">{peptide['explanation']}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        """, unsafe_allow_html=True)
+                                    
+                                    # Store peptides in session state
+                                    st.session_state['peptides'] = peptides_result['peptides']
+                                    
+                                else:
+                                    status_message(f"❌ Peptide generation failed: {peptides_result['error']}", "error")
+                                    
+                            except Exception as e:
+                                status_message(f"❌ Error during peptide generation: {str(e)}", "error")
+                else:
+                    status_message("Please enter your API key in the sidebar to generate peptides", "info")
+        
+        with col2:
+            # 3D Visualization
             card(
                 "3D Visualization",
                 "",
@@ -613,7 +633,7 @@ def main():
                     visualizer = ProteinVisualizer()
                     visualizer.display_structure(pdb_content, chain_id)
                 except Exception as e:
-                    status_message(f"Visualization error: {str(e)}", "error")
+                    status_message(f"❌ Visualization error: {str(e)}", "error")
             else:
                 status_message("Upload a PDB file to see the 3D structure visualization", "info")
         
