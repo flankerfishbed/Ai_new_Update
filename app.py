@@ -11,6 +11,8 @@ from modules.surface_analyzer import SurfaceAnalyzer
 from modules.peptide_generator import PeptideGenerator
 from modules.visualizer import ProteinVisualizer
 from modules.llm_providers import LLMProviderFactory
+from modules.solubility_predictor import SolubilityPredictor, SOLVENTS
+import matplotlib.pyplot as plt
 
 # Page configuration
 st.set_page_config(
@@ -234,6 +236,17 @@ def main():
                                 st.success(f"Generated {len(peptides_result['peptides'])} peptide candidates!")
                                 st.subheader("Generated Peptide Candidates")
                                 for i, peptide in enumerate(peptides_result['peptides'], 1):
+                                    solubility_predictor = SolubilityPredictor()
+                                    solubility_data = solubility_predictor.solubility_panel(peptide['sequence'])
+                                    solubility_df = pd.DataFrame(solubility_data)
+
+                                    # Bar chart
+                                    fig, ax = plt.subplots(figsize=(5, 2))
+                                    ax.bar(solubility_df["Solvent"], solubility_df["Solubility (AU)"], color="#6366f1")
+                                    ax.set_ylabel("Solubility (AU)")
+                                    ax.set_xticklabels(solubility_df["Solvent"], rotation=45, ha="right")
+                                    plt.tight_layout()
+
                                     st.markdown(f"""
                                     <div class="peptide-card">
                                         <div class="peptide-header">
@@ -248,6 +261,7 @@ def main():
                                                     <li><strong>Hydrophobicity:</strong> {peptide['properties']['hydrophobicity']}</li>
                                                     <li><strong>Motifs:</strong> {', '.join(peptide['properties']['motifs'])}</li>
                                                 </ul>
+                                                <h5 style="color: #ffffff; margin-bottom: 0.5rem;">Solubility Panel:</h5>
                                             </div>
                                             <div>
                                                 <h5 style="color: #ffffff; margin-bottom: 0.5rem;">Reasoning:</h5>
@@ -256,6 +270,8 @@ def main():
                                         </div>
                                     </div>
                                     """, unsafe_allow_html=True)
+                                    st.table(solubility_df)
+                                    st.pyplot(fig)
                                 st.session_state['peptides'] = peptides_result['peptides']
                             else:
                                 st.error(f"Peptide generation failed: {peptides_result['error']}")
