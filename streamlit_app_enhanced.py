@@ -231,28 +231,98 @@ def display_peptide_analysis(peptide: Dict[str, Any], analysis_result: Dict[str,
 """)
     
     # Import solubility predictor and generate data
-    from modules.solubility_predictor import SolubilityPredictor
+    from modules.solubility_predictor import SolubilityPredictor, REFERENCE_PEPTIDES
     solubility_predictor = SolubilityPredictor()
     solubility_data = solubility_predictor.solubility_panel(peptide['sequence'])
     
-    # Create solubility chart
+    # Reference peptide selection
+    st.write("**Compare with reference peptides:**")
+    reference_options = ["None"] + list(REFERENCE_PEPTIDES.keys())
+    selected_references = st.multiselect(
+        "Select reference peptides for comparison:",
+        options=reference_options[1:],  # Exclude "None"
+        default=["GRGDS", "RGD"],
+        help="Choose reference peptides to compare solubility profiles"
+    )
+    
+    # Create enhanced solubility chart with references
+    fig = go.Figure()
+    
+    # Add user's peptide data
     solvents = [item["Solvent"] for item in solubility_data]
     values = [item["Solubility (AU)"] for item in solubility_data]
     
-    fig = go.Figure(data=[
-        go.Bar(x=solvents, y=values, marker_color='#6366f1')
-    ])
+    fig.add_trace(go.Bar(
+        x=solvents,
+        y=values,
+        name=f"Your Peptide: {peptide['sequence']}",
+        marker_color='#6366f1',
+        opacity=0.9
+    ))
+    
+    # Add reference peptides
+    colors = ['#2ED573', '#FFA502', '#FF4757', '#3742FA', '#FF6B6B', '#45B7D1', '#96CEB4']
+    for i, ref_key in enumerate(selected_references):
+        if ref_key in REFERENCE_PEPTIDES:
+            ref_data = solubility_predictor.get_reference_solubility_data(ref_key)
+            if ref_data:
+                ref_values = [item["Solubility (AU)"] for item in ref_data["solubility_data"]]
+                ref_info = ref_data["peptide_info"]
+                
+                fig.add_trace(go.Bar(
+                    x=solvents,
+                    y=ref_values,
+                    name=f"{ref_key}: {ref_info['description']}",
+                    marker_color=colors[i % len(colors)],
+                    opacity=0.7
+                ))
+    
     fig.update_layout(
-        title="Peptide Solubility Across Different Solvents",
+        title="Peptide Solubility Comparison Across Different Solvents",
         xaxis_title="Solvent",
         yaxis_title="Solubility (AU)",
-        height=400
+        height=500,
+        barmode='group',
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.02,
+            xanchor="right",
+            x=1
+        )
     )
     st.plotly_chart(fig, use_container_width=True, key=f"solubility_chart_{peptide_index}")
     
+    # Display reference peptide information
+    if selected_references:
+        st.subheader("📋 Reference Peptide Information")
+        ref_cols = st.columns(len(selected_references))
+        for i, ref_key in enumerate(selected_references):
+            if ref_key in REFERENCE_PEPTIDES:
+                ref_info = REFERENCE_PEPTIDES[ref_key]
+                with ref_cols[i]:
+                    st.markdown(f"""
+                    **{ref_key}**
+                    - **Category:** {ref_info['category']}
+                    - **Use:** {ref_info['typical_use']}
+                    - **Description:** {ref_info['description']}
+                    """)
+    
     # Display solubility table
-    st.write("**Detailed Solubility Data:**")
+    st.subheader("📊 Detailed Solubility Data")
     solubility_df = pd.DataFrame(solubility_data)
+    solubility_df["Peptide"] = peptide['sequence']
+    
+    # Add reference data to table if selected
+    if selected_references:
+        for ref_key in selected_references:
+            if ref_key in REFERENCE_PEPTIDES:
+                ref_data = solubility_predictor.get_reference_solubility_data(ref_key)
+                if ref_data:
+                    ref_df = pd.DataFrame(ref_data["solubility_data"])
+                    ref_df["Peptide"] = ref_key
+                    solubility_df = pd.concat([solubility_df, ref_df], ignore_index=True)
+    
     st.dataframe(solubility_df, use_container_width=True)
     
     # Interaction potential
