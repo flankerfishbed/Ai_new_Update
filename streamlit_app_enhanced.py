@@ -228,6 +228,11 @@ def display_peptide_analysis(peptide: Dict[str, Any], analysis_result: Dict[str,
 - TFA (peptide synthesis/purification)  
 """)
     
+    # Import solubility predictor and generate data
+    from modules.solubility_predictor import SolubilityPredictor
+    solubility_predictor = SolubilityPredictor()
+    solubility_data = solubility_predictor.solubility_panel(peptide['sequence'])
+    
     # Create solubility chart
     solvents = [item["Solvent"] for item in solubility_data]
     values = [item["Solubility (AU)"] for item in solubility_data]
