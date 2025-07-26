@@ -242,7 +242,8 @@ def display_peptide_analysis(peptide: Dict[str, Any], analysis_result: Dict[str,
         "Select reference peptides for comparison:",
         options=reference_options[1:],  # Exclude "None"
         default=["GRGDS", "RGD"],
-        help="Choose reference peptides to compare solubility profiles"
+        help="Choose reference peptides to compare solubility profiles",
+        key=f"reference_peptides_{peptide_index}"
     )
     
     # Create enhanced solubility chart with references
@@ -323,7 +324,7 @@ def display_peptide_analysis(peptide: Dict[str, Any], analysis_result: Dict[str,
                     ref_df["Peptide"] = ref_key
                     solubility_df = pd.concat([solubility_df, ref_df], ignore_index=True)
     
-    st.dataframe(solubility_df, use_container_width=True)
+    st.dataframe(solubility_df, use_container_width=True, key=f"solubility_table_{peptide_index}")
     
     # Interaction potential
     st.subheader("⚡ Interaction Potential")
