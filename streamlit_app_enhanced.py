@@ -393,7 +393,7 @@ def main():
                             with kpi_cols[2]: 
                                 kpi_tile(len(parsed_result['residues']), "Total Residues")
                             with kpi_cols[3]: 
-                                kpi_tile(f"{len(parsed_result['sequence'])/3:.1f}", "Avg Residue Size")
+                                kpi_tile(f"{len(parsed_result['sequence'])/3:.1f}", "Avg Residue Size (aa)")
                             st.markdown('</div>', unsafe_allow_html=True)
                             
                             # Protein sequence
