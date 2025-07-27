@@ -178,23 +178,7 @@ def display_peptide_analysis(peptide: Dict[str, Any], analysis_result: Dict[str,
     with col3:
         st.metric("Polarity Contribution", f"{factors['polarity_contribution']:.3f}")
     
-    # Stability analysis
-    st.subheader("🛡️ Stability Analysis")
-    stability = analysis_result['analysis']['stability']
-    st.metric("Stability Score", f"{stability['stability_score']:.3f}")
-    
-    # Stability motifs
-    motifs = stability['stability_motifs']
-    st.write("**Stability Motifs:**")
-    motif_cols = st.columns(4)
-    with motif_cols[0]:
-        st.metric("Disulfide Potential", "✓" if motifs['disulfide_potential'] else "✗")
-    with motif_cols[1]:
-        st.metric("Proline-Rich", "✓" if motifs['proline_rich'] else "✗")
-    with motif_cols[2]:
-        st.metric("Glycine-Rich", "✓" if motifs['glycine_rich'] else "✗")
-    with motif_cols[3]:
-        st.metric("Hydrophobic Clusters", "✓" if motifs['hydrophobic_clusters'] else "✗")
+    # Stability analysis removed - using ExPASy for professional stability analysis
     
     # Immunogenicity
     st.subheader("🩸 Immunogenicity Assessment")
@@ -466,9 +450,8 @@ def main():
             pdb_content = uploaded_file.read().decode('utf-8')
             
             # Create tabs for different analysis sections
-            tab1, tab2, tab3, tab4, tab5 = st.tabs([
+            tab1, tab2, tab3, tab4 = st.tabs([
                 "🔬 Basic Analysis", 
-                "🎯 Interaction Analysis", 
                 "🧬 Peptide Generation", 
                 "📊 Advanced Analysis", 
                 "🎨 3D Visualization"
@@ -555,12 +538,6 @@ def main():
                             st.warning(f"⚠️ Surface analysis error: {str(e)}")
             
             with tab2:
-                st.header("🎯 Interaction Analysis")
-                st.info("ℹ️ Interaction analysis is currently disabled for simplified visualization.")
-                st.info("💡 You can still visualize your protein structure in the '3D Visualization' tab.")
-                st.info("🔬 Basic protein analysis is available in the 'Basic Analysis' tab.")
-            
-            with tab3:
                 st.header("🧬 AI Peptide Generation")
                 if api_key:
                     st.markdown("**Click the button below to generate AI-suggested peptide candidates:**")
@@ -582,9 +559,7 @@ def main():
                                 if 'surface_data' in st.session_state:
                                     context_data['surface_data'] = st.session_state['surface_data']
                                 
-                                # Add interaction data if available
-                                if 'interaction_data' in st.session_state:
-                                    context_data['interaction_data'] = st.session_state['interaction_data']
+                                # Interaction data removed for simplified visualization
                                 
                                 peptides_result = generator.generate_peptides(context_data)
                                 
@@ -626,7 +601,7 @@ def main():
                 else:
                     st.info("ℹ️ Please enter your API key in the sidebar to generate peptides.")
             
-            with tab4:
+            with tab3:
                 st.header("📊 Advanced Peptide Analysis")
                 if 'peptides' in st.session_state and enable_advanced_analysis:
                     st.subheader("🔬 Comprehensive Analysis Results")
@@ -747,7 +722,6 @@ def main():
                                     'Peptide': f"Peptide {i}",
                                     'Sequence': peptide['sequence'],
                                     'Binding Score': analysis_result['analysis']['binding_affinity']['binding_score'],
-                                    'Stability Score': analysis_result['analysis']['stability']['stability_score'],
                                     'Overall Score': analysis_result['summary']['overall_score'],
                                     'Immunogenicity Risk': analysis_result['analysis']['immunogenicity']['risk_level']
                                 })
@@ -772,7 +746,7 @@ def main():
                             # Create comparison chart
                             fig = make_subplots(
                                 rows=2, cols=2,
-                                subplot_titles=('Binding Scores', 'Stability Scores', 'Overall Scores', 'Risk Levels'),
+                                subplot_titles=('Binding Scores', 'Overall Scores', 'Immunogenicity Risk', 'Risk Levels'),
                                 specs=[[{"type": "bar"}, {"type": "bar"}],
                                    [{"type": "bar"}, {"type": "scatter"}]]
                             )
@@ -783,15 +757,15 @@ def main():
                                 row=1, col=1
                             )
                             
-                            # Stability scores
-                            fig.add_trace(
-                                go.Bar(x=df['Peptide'], y=df['Stability Score'], name='Stability Score'),
-                                row=1, col=2
-                            )
-                            
                             # Overall scores
                             fig.add_trace(
                                 go.Bar(x=df['Peptide'], y=df['Overall Score'], name='Overall Score'),
+                                row=1, col=2
+                            )
+                            
+                            # Immunogenicity risk
+                            fig.add_trace(
+                                go.Bar(x=df['Peptide'], y=df['Immunogenicity Risk'].map({'Low': 1, 'Medium': 2, 'High': 3}), name='Immunogenicity Risk'),
                                 row=2, col=1
                             )
                             
@@ -839,17 +813,17 @@ def main():
                 else:
                     st.info("ℹ️ Generate peptides and enable advanced analysis to see comprehensive results.")
             
-            with tab5:
+            with tab4:
                 st.header("🎨 Enhanced 3D Visualization")
                 st.markdown("""
                 <div class="viewer-instructions">
-                    <strong>💡 Interactive 3D Viewer:</strong> Advanced visualization with interaction analysis:
+                    <strong>💡 Interactive 3D Viewer:</strong> Simple protein structure visualization:
                     <ul style="margin: 0.5rem 0 0 0; padding-left: 1.5rem;">
                         <li><strong>Rotate:</strong> Click and drag to rotate the molecule</li>
                         <li><strong>Zoom:</strong> Scroll to zoom in/out</li>
                         <li><strong>Pan:</strong> Right-click and drag to move the view</li>
                         <li><strong>Reset:</strong> Double-click to reset the view</li>
-                        <li><strong>Highlights:</strong> Interaction sites and binding pockets are highlighted</li>
+                        <li><strong>Colors:</strong> Protein chains are color-coded for easy identification</li>
                     </ul>
                 </div>
                 """, unsafe_allow_html=True)
