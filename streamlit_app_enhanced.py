@@ -686,7 +686,7 @@ def main():
                                                 st.success("✅ ExPASy analysis completed!")
                                                 
                                                 # Display ExPASy results
-                                                st.subheader("🌐 ExPASy ProtParam Stability Analysis")
+                                                st.subheader("🌐 Stability Analysis")
                                                 
                                                 # Basic properties (local calculations)
                                                 col1, col2, col3, col4 = st.columns(4)
