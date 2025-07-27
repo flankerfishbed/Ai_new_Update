@@ -12,7 +12,7 @@ from typing import Dict, List, Any
 from modules.pdb_parser import PDBParser
 from modules.surface_analyzer import SurfaceAnalyzer
 from modules.peptide_generator import PeptideGenerator
-from modules.enhanced_visualizer import EnhancedVisualizer
+# from modules.enhanced_visualizer import EnhancedVisualizer  # 3D visualization removed
 from modules.llm_providers import LLMProviderFactory
 from modules.solubility_predictor import SolubilityPredictor, SOLVENTS
 from modules.peptide_analyzer import AdvancedPeptideAnalyzer
@@ -444,13 +444,7 @@ def main():
             enable_comparative_analysis = st.checkbox("Comparative Analysis", value=True, 
                                                    help="Compare multiple peptides side-by-side")
             
-            # Visualization options
-            st.subheader("🎨 Visualization")
-            # show_interaction_sites = st.checkbox("Show Interaction Sites", value=True, 
-            #                                   help="Highlight interaction sites in 3D visualization")
-            # show_binding_pockets = st.checkbox("Show Binding Pockets", value=True, 
-            #                                 help="Show binding pockets in 3D visualization")
-            # Interaction visualization disabled for simplified 3D viewer
+            # Visualization options removed - 3D visualization disabled
             
             st.markdown("---")
             
@@ -495,11 +489,10 @@ def main():
             pdb_content = uploaded_file.read().decode('utf-8')
             
             # Create tabs for different analysis sections
-            tab1, tab2, tab3, tab4 = st.tabs([
+            tab1, tab2, tab3 = st.tabs([
                 "🔬 Basic Analysis", 
                 "🧬 Peptide Generation", 
-                "📊 Advanced Analysis", 
-                "🎨 3D Visualization"
+                "📊 Advanced Analysis"
             ])
             
             with tab1:
@@ -891,26 +884,7 @@ def main():
                 else:
                     st.info("ℹ️ Generate peptides and enable advanced analysis to see comprehensive results.")
             
-            with tab4:
-                st.header("🎨 Enhanced 3D Visualization")
-                st.markdown("""
-                <div class="viewer-instructions">
-                    <strong>💡 Interactive 3D Viewer:</strong> Simple protein structure visualization:
-                    <ul style="margin: 0.5rem 0 0 0; padding-left: 1.5rem;">
-                        <li><strong>Rotate:</strong> Click and drag to rotate the molecule</li>
-                        <li><strong>Zoom:</strong> Scroll to zoom in/out</li>
-                        <li><strong>Pan:</strong> Right-click and drag to move the view</li>
-                        <li><strong>Reset:</strong> Double-click to reset the view</li>
-                        <li><strong>Colors:</strong> Protein chains are color-coded for easy identification</li>
-                    </ul>
-                </div>
-                """, unsafe_allow_html=True)
-                
-                try:
-                    visualizer = EnhancedVisualizer()
-                    visualizer.display_enhanced_structure(pdb_content, chain_id)
-                except Exception as e:
-                    st.error(f"❌ Visualization error: {str(e)}")
+
         
         st.markdown('</div>', unsafe_allow_html=True)
 
