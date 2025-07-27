@@ -16,7 +16,7 @@ from modules.enhanced_visualizer import EnhancedVisualizer
 from modules.llm_providers import LLMProviderFactory
 from modules.solubility_predictor import SolubilityPredictor, SOLVENTS
 from modules.peptide_analyzer import AdvancedPeptideAnalyzer
-from modules.interaction_analyzer import InteractionAnalyzer
+# from modules.interaction_analyzer import InteractionAnalyzer  # Disabled for simplified visualization
 from modules.expasy_integration import ExPASyIntegration
 import matplotlib.pyplot as plt
 
@@ -407,8 +407,9 @@ def main():
             st.subheader("📊 Advanced Analysis")
             enable_surface_analysis = st.checkbox("Surface Analysis", value=True, 
                                                help="Calculate solvent-accessible surface area for residues")
-            enable_interaction_analysis = st.checkbox("Interaction Analysis", value=True, 
-                                                   help="Analyze potential interaction sites and binding pockets")
+            # enable_interaction_analysis = st.checkbox("Interaction Analysis", value=True, 
+            #                                        help="Analyze potential interaction sites and binding pockets")
+            # Interaction analysis disabled for simplified visualization
             enable_advanced_analysis = st.checkbox("Advanced Peptide Analysis", value=True, 
                                                 help="Perform comprehensive peptide property analysis")
             enable_comparative_analysis = st.checkbox("Comparative Analysis", value=True, 
@@ -416,10 +417,11 @@ def main():
             
             # Visualization options
             st.subheader("🎨 Visualization")
-            show_interaction_sites = st.checkbox("Show Interaction Sites", value=True, 
-                                              help="Highlight interaction sites in 3D visualization")
-            show_binding_pockets = st.checkbox("Show Binding Pockets", value=True, 
-                                            help="Show binding pockets in 3D visualization")
+            # show_interaction_sites = st.checkbox("Show Interaction Sites", value=True, 
+            #                                   help="Highlight interaction sites in 3D visualization")
+            # show_binding_pockets = st.checkbox("Show Binding Pockets", value=True, 
+            #                                 help="Show binding pockets in 3D visualization")
+            # Interaction visualization disabled for simplified 3D viewer
             
             st.markdown("---")
             
@@ -554,41 +556,9 @@ def main():
             
             with tab2:
                 st.header("🎯 Interaction Analysis")
-                if enable_interaction_analysis:
-                    with st.spinner("Analyzing interaction sites..."):
-                        try:
-                            interaction_analyzer = InteractionAnalyzer()
-                            interaction_result = interaction_analyzer.analyze_interaction_sites(pdb_content, chain_id)
-                            
-                            if interaction_result['success']:
-                                st.success("✅ Interaction analysis completed!")
-                                summary = interaction_result['summary']
-                                
-                                # Display interaction metrics
-                                col1, col2, col3 = st.columns(3)
-                                with col1:
-                                    st.metric("Interaction Sites", summary['total_interaction_sites'])
-                                with col2:
-                                    st.metric("High Affinity Sites", summary['high_affinity_sites'])
-                                with col3:
-                                    st.metric("Binding Pockets", summary['binding_pockets_found'])
-                                
-                                # Display recommendations
-                                if summary['recommendations']:
-                                    st.info("💡 **Interaction Analysis Recommendations:**")
-                                    for rec in summary['recommendations']:
-                                        st.write(f"• {rec}")
-                                
-                                # Store interaction data
-                                st.session_state['interaction_data'] = interaction_result
-                                
-                            else:
-                                st.warning(f"⚠️ Interaction analysis failed: {interaction_result['error']}")
-                                
-                        except Exception as e:
-                            st.warning(f"⚠️ Interaction analysis error: {str(e)}")
-                else:
-                    st.info("ℹ️ Enable interaction analysis in the sidebar to analyze binding sites.")
+                st.info("ℹ️ Interaction analysis is currently disabled for simplified visualization.")
+                st.info("💡 You can still visualize your protein structure in the '3D Visualization' tab.")
+                st.info("🔬 Basic protein analysis is available in the 'Basic Analysis' tab.")
             
             with tab3:
                 st.header("🧬 AI Peptide Generation")
