@@ -333,7 +333,7 @@ def display_peptide_analysis(peptide: Dict[str, Any], analysis_result: Dict[str,
     st.subheader("📊 Analysis Summary")
     summary = analysis_result['summary']
     
-    # Enhanced summary with ExPASy stability assessment
+        # Enhanced summary with ExPASy stability assessment
     col1, col2 = st.columns(2)
     
     with col1:
@@ -345,17 +345,35 @@ def display_peptide_analysis(peptide: Dict[str, Any], analysis_result: Dict[str,
             st.metric("ExPASy Stability Score", f"{stability['stability_score']:.3f}")
             st.metric("ExPASy Risk Level", stability['risk_level'])
         
-        if summary['key_strengths']:
+        # Filter key strengths to avoid contradictions with ExPASy
+        filtered_strengths = summary['key_strengths'].copy() if summary['key_strengths'] else []
+        
+        # Remove stability-related strengths if ExPASy shows poor stability
+        if expasy_data:
+            stability = expasy_data['stability_analysis']
+            if stability['risk_level'] in ['High', 'Medium']:
+                filtered_strengths = [s for s in filtered_strengths if 'stability' not in s.lower() and 'stable' not in s.lower()]
+        
+        if filtered_strengths:
             st.write("**Key Strengths:**")
-            for strength in summary['key_strengths']:
+            for strength in filtered_strengths:
                 st.write(f"✅ {strength}")
     
     with col2:
-        if summary['key_concerns']:
-            st.write("**Key Concerns:**")
-            for concern in summary['key_concerns']:
-                st.write(f"⚠️ {concern}")
+        # Filter key concerns to avoid contradictions with ExPASy
+        filtered_concerns = summary['key_concerns'].copy() if summary['key_concerns'] else []
         
+        # Remove stability-related concerns if ExPASy shows good stability
+        if expasy_data:
+            stability = expasy_data['stability_analysis']
+            if stability['risk_level'] == 'Low':
+                filtered_concerns = [c for c in filtered_concerns if 'stability' not in c.lower() and 'stable' not in c.lower()]
+        
+        if filtered_concerns:
+            st.write("**Key Concerns:**")
+            for concern in filtered_concerns:
+                st.write(f"⚠️ {concern}")
+    
         # Add ExPASy-specific concerns if available
         if expasy_data:
             stability = expasy_data['stability_analysis']
@@ -369,9 +387,17 @@ def display_peptide_analysis(peptide: Dict[str, Any], analysis_result: Dict[str,
     # Enhanced recommendations incorporating ExPASy data
     st.subheader("💡 Recommendations")
     
-    # Base recommendations
-    if summary['recommendations']:
-        for rec in summary['recommendations']:
+    # Base recommendations (filtered to avoid contradictions)
+    filtered_recommendations = summary['recommendations'].copy() if summary['recommendations'] else []
+    
+    # Remove stability-related recommendations if ExPASy shows good stability
+    if expasy_data:
+        stability = expasy_data['stability_analysis']
+        if stability['risk_level'] == 'Low':
+            filtered_recommendations = [r for r in filtered_recommendations if 'stability' not in r.lower() and 'stable' not in r.lower()]
+    
+    if filtered_recommendations:
+        for rec in filtered_recommendations:
             st.write(f"• {rec}")
     
     # ExPASy-specific recommendations
