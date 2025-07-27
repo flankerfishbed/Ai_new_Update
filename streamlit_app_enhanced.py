@@ -830,13 +830,13 @@ def main():
                                 
                                 # Instability indices
                                 fig_expasy.add_trace(
-                                    go.Bar(x=expasy_df['Peptide'], y=expasy_df['Instability Index'], name='Instability Index'),
+                                    go.Bar(x=expasy_df['Peptide'], y=expasy_df['Instability Index (ExPASy)'], name='Instability Index'),
                                     row=1, col=2
                                 )
                                 
                                 # GRAVY scores
                                 fig_expasy.add_trace(
-                                    go.Bar(x=expasy_df['Peptide'], y=expasy_df['GRAVY Score'], name='GRAVY Score'),
+                                    go.Bar(x=expasy_df['Peptide'], y=expasy_df['GRAVY Score (Local)'], name='GRAVY Score'),
                                     row=2, col=1
                                 )
                                 
@@ -857,13 +857,13 @@ def main():
                                         st.info(f"**🏆 Best Stability:** {best_stability['Peptide']} ({best_stability['Sequence']})")
                                         st.write(f"• Stability Score: {best_stability['ExPASy Stability Score']:.3f}")
                                         st.write(f"• Risk Level: {best_stability['ExPASy Risk Level']}")
-                                        st.write(f"• Instability Index: {best_stability['Instability Index']:.1f}")
+                                        st.write(f"• Instability Index: {best_stability['Instability Index (ExPASy)']:.1f}")
                                     
                                     with col2:
                                         st.warning(f"**⚠️ Lowest Stability:** {worst_stability['Peptide']} ({worst_stability['Sequence']})")
                                         st.write(f"• Stability Score: {worst_stability['ExPASy Stability Score']:.3f}")
                                         st.write(f"• Risk Level: {worst_stability['ExPASy Risk Level']}")
-                                        st.write(f"• Instability Index: {worst_stability['Instability Index']:.1f}")
+                                        st.write(f"• Instability Index: {worst_stability['Instability Index (ExPASy)']:.1f}")
                                     
                                     # Overall recommendations
                                     st.subheader("💡 ExPASy-Based Recommendations")
