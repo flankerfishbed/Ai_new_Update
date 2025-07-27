@@ -17,6 +17,7 @@ from modules.llm_providers import LLMProviderFactory
 from modules.solubility_predictor import SolubilityPredictor, SOLVENTS
 from modules.peptide_analyzer import AdvancedPeptideAnalyzer
 from modules.interaction_analyzer import InteractionAnalyzer
+from modules.expasy_integration import ExPASyIntegration
 import matplotlib.pyplot as plt
 
 # Page configuration
@@ -660,25 +661,115 @@ def main():
                 if 'peptides' in st.session_state and enable_advanced_analysis:
                     st.subheader("🔬 Comprehensive Analysis Results")
                     
+                    # Initialize ExPASy integration
+                    expasy_integration = ExPASyIntegration()
+                    
+                    # Add ExPASy stability analysis option
+                    st.subheader("🛡️ ExPASy Stability Analysis")
+                    enable_expasy_analysis = st.checkbox(
+                        "Enable ExPASy ProtParam Analysis", 
+                        value=True,
+                        help="Use ExPASy ProtParam for advanced stability prediction"
+                    )
+                    
+                    if enable_expasy_analysis:
+                        st.info("🌐 **ExPASy Integration**: Using ExPASy ProtParam for professional-grade stability analysis with rate limiting for cloud deployment.")
+                    
                     # Analyze each peptide
                     peptide_analyzer = AdvancedPeptideAnalyzer()
                     
                     for i, peptide in enumerate(st.session_state['peptides'], 1):
                         with st.expander(f"Peptide {i}: {peptide['sequence']}", expanded=(i==1)):
                             with st.spinner(f"Analyzing peptide {i}..."):
+                                # Basic analysis
                                 analysis_result = peptide_analyzer.comprehensive_analysis(peptide['sequence'])
                                 
                                 if analysis_result['success']:
                                     display_peptide_analysis(peptide, analysis_result, i)
+                                    
+                                    # ExPASy stability analysis
+                                    if enable_expasy_analysis:
+                                        st.markdown("---")
+                                        st.subheader("🌐 ExPASy ProtParam Stability Analysis")
+                                        
+                                        with st.spinner("Analyzing with ExPASy ProtParam..."):
+                                            expasy_result = expasy_integration.analyze_peptide_stability(peptide['sequence'])
+                                            
+                                            if expasy_result['success']:
+                                                st.success("✅ ExPASy analysis completed!")
+                                                
+                                                # Display ExPASy results
+                                                expasy_data = expasy_result['data']
+                                                
+                                                # Basic properties from ExPASy
+                                                col1, col2, col3, col4 = st.columns(4)
+                                                with col1:
+                                                    st.metric("Molecular Weight (ExPASy)", f"{expasy_data['basic_properties']['molecular_weight']:.1f} Da")
+                                                with col2:
+                                                    st.metric("Isoelectric Point (ExPASy)", f"{expasy_data['basic_properties']['isoelectric_point']:.2f}")
+                                                with col3:
+                                                    st.metric("GRAVY Score (ExPASy)", f"{expasy_data['basic_properties']['gravy_score']:.3f}")
+                                                with col4:
+                                                    st.metric("Instability Index", f"{expasy_data['basic_properties']['instability_index']:.1f}")
+                                                
+                                                # Stability analysis
+                                                stability = expasy_data['stability_analysis']
+                                                st.subheader("🛡️ ExPASy Stability Assessment")
+                                                
+                                                col1, col2, col3 = st.columns(3)
+                                                with col1:
+                                                    st.metric("Stability Score", f"{stability['stability_score']:.3f}")
+                                                with col2:
+                                                    st.metric("Risk Level", stability['risk_level'])
+                                                with col3:
+                                                    st.metric("Aliphatic Index", f"{expasy_data['basic_properties']['aliphatic_index']:.1f}")
+                                                
+                                                # Stability factors
+                                                st.subheader("📊 Stability Factors")
+                                                factors = stability['stability_factors']
+                                                col1, col2, col3, col4 = st.columns(4)
+                                                with col1:
+                                                    st.metric("Hydrophobicity", factors['hydrophobicity'])
+                                                with col2:
+                                                    st.metric("Charge Stability", factors['charge_stability'])
+                                                with col3:
+                                                    st.metric("Size Stability", factors['size_stability'])
+                                                with col4:
+                                                    st.metric("Composition", factors['composition_stability'])
+                                                
+                                                # Recommendations
+                                                if expasy_data['recommendations']:
+                                                    st.subheader("💡 ExPASy Recommendations")
+                                                    for rec in expasy_data['recommendations']:
+                                                        st.write(f"• {rec}")
+                                                
+                                                # Amino acid composition
+                                                if expasy_data['amino_acid_composition']:
+                                                    st.subheader("🧬 Amino Acid Composition (ExPASy)")
+                                                    composition_df = pd.DataFrame([
+                                                        {
+                                                            'Amino Acid': aa,
+                                                            'Count': data['count'],
+                                                            'Percentage': f"{data['percentage']:.1f}%"
+                                                        }
+                                                        for aa, data in expasy_data['amino_acid_composition'].items()
+                                                    ])
+                                                    st.dataframe(composition_df, use_container_width=True)
+                                                
+                                            else:
+                                                st.warning(f"⚠️ ExPASy analysis failed: {expasy_result['error']}")
+                                                st.info("💡 This may be due to network issues or service availability. The analysis will continue with local calculations.")
                                 else:
                                     st.error(f"❌ Analysis failed: {analysis_result['error']}")
                     
-                    # Comparative analysis
+                    # Comparative analysis with ExPASy
                     if enable_comparative_analysis and len(st.session_state['peptides']) > 1:
                         st.subheader("📈 Comparative Analysis")
                         
                         # Create comparison chart
                         comparison_data = []
+                        expasy_comparison_data = []
+                        
                         for i, peptide in enumerate(st.session_state['peptides'], 1):
                             analysis_result = peptide_analyzer.comprehensive_analysis(peptide['sequence'])
                             if analysis_result['success']:
@@ -690,6 +781,20 @@ def main():
                                     'Overall Score': analysis_result['summary']['overall_score'],
                                     'Immunogenicity Risk': analysis_result['analysis']['immunogenicity']['risk_level']
                                 })
+                                
+                                # Add ExPASy data if available
+                                if enable_expasy_analysis:
+                                    expasy_result = expasy_integration.analyze_peptide_stability(peptide['sequence'])
+                                    if expasy_result['success']:
+                                        expasy_data = expasy_result['data']
+                                        expasy_comparison_data.append({
+                                            'Peptide': f"Peptide {i}",
+                                            'Sequence': peptide['sequence'],
+                                            'ExPASy Stability Score': expasy_data['stability_analysis']['stability_score'],
+                                            'ExPASy Risk Level': expasy_data['stability_analysis']['risk_level'],
+                                            'Instability Index': expasy_data['basic_properties']['instability_index'],
+                                            'GRAVY Score': expasy_data['basic_properties']['gravy_score']
+                                        })
                         
                         if comparison_data:
                             df = pd.DataFrame(comparison_data)
@@ -726,6 +831,41 @@ def main():
                             # Display comparison table
                             st.subheader("📋 Comparison Summary")
                             st.dataframe(df, use_container_width=True)
+                            
+                            # ExPASy comparison if available
+                            if expasy_comparison_data:
+                                st.subheader("🌐 ExPASy Comparison Summary")
+                                expasy_df = pd.DataFrame(expasy_comparison_data)
+                                st.dataframe(expasy_df, use_container_width=True)
+                                
+                                # ExPASy comparison chart
+                                fig_expasy = make_subplots(
+                                    rows=2, cols=2,
+                                    subplot_titles=('ExPASy Stability Scores', 'Instability Indices', 'GRAVY Scores', 'Risk Levels'),
+                                    specs=[[{"type": "bar"}, {"type": "bar"}],
+                                       [{"type": "bar"}, {"type": "scatter"}]]
+                                )
+                                
+                                # ExPASy stability scores
+                                fig_expasy.add_trace(
+                                    go.Bar(x=expasy_df['Peptide'], y=expasy_df['ExPASy Stability Score'], name='ExPASy Stability'),
+                                    row=1, col=1
+                                )
+                                
+                                # Instability indices
+                                fig_expasy.add_trace(
+                                    go.Bar(x=expasy_df['Peptide'], y=expasy_df['Instability Index'], name='Instability Index'),
+                                    row=1, col=2
+                                )
+                                
+                                # GRAVY scores
+                                fig_expasy.add_trace(
+                                    go.Bar(x=expasy_df['Peptide'], y=expasy_df['GRAVY Score'], name='GRAVY Score'),
+                                    row=2, col=1
+                                )
+                                
+                                fig_expasy.update_layout(height=600, title_text="ExPASy Stability Comparison")
+                                st.plotly_chart(fig_expasy, use_container_width=True, key="expasy_comparison_chart")
                 else:
                     st.info("ℹ️ Generate peptides and enable advanced analysis to see comprehensive results.")
             
