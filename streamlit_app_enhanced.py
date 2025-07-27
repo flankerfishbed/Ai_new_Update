@@ -137,7 +137,7 @@ def kpi_tile(value, label):
     </div>
     """, unsafe_allow_html=True)
 
-def display_peptide_analysis(peptide: Dict[str, Any], analysis_result: Dict[str, Any], peptide_index: int = 1):
+def display_peptide_analysis(peptide: Dict[str, Any], analysis_result: Dict[str, Any], peptide_index: int = 1, expasy_data: Dict[str, Any] = None):
     """Display comprehensive peptide analysis."""
     import plotly.graph_objects as go
     
@@ -329,14 +329,21 @@ def display_peptide_analysis(peptide: Dict[str, Any], analysis_result: Dict[str,
     )
     st.plotly_chart(fig, use_container_width=True, key=f"interaction_chart_{peptide_index}")
     
-    # Summary and recommendations
+    # Summary and recommendations with ExPASy integration
     st.subheader("📊 Analysis Summary")
     summary = analysis_result['summary']
     
+    # Enhanced summary with ExPASy stability assessment
     col1, col2 = st.columns(2)
     
     with col1:
         st.metric("Overall Score", f"{summary['overall_score']:.3f}")
+        
+        # Include ExPASy stability assessment if available
+        if expasy_data:
+            stability = expasy_data['stability_analysis']
+            st.metric("ExPASy Stability Score", f"{stability['stability_score']:.3f}")
+            st.metric("ExPASy Risk Level", stability['risk_level'])
         
         if summary['key_strengths']:
             st.write("**Key Strengths:**")
@@ -348,11 +355,49 @@ def display_peptide_analysis(peptide: Dict[str, Any], analysis_result: Dict[str,
             st.write("**Key Concerns:**")
             for concern in summary['key_concerns']:
                 st.write(f"⚠️ {concern}")
+        
+        # Add ExPASy-specific concerns if available
+        if expasy_data:
+            stability = expasy_data['stability_analysis']
+            if stability['risk_level'] in ['High', 'Medium']:
+                st.write(f"⚠️ **ExPASy Stability Risk:** {stability['risk_level']} risk level")
+                if stability['stability_factors']['hydrophobicity'] == 'High':
+                    st.write("⚠️ **High Hydrophobicity:** May affect solubility")
+                if stability['stability_factors']['charge_stability'] == 'Unstable':
+                    st.write("⚠️ **Charge Instability:** May affect binding")
     
+    # Enhanced recommendations incorporating ExPASy data
+    st.subheader("💡 Recommendations")
+    
+    # Base recommendations
     if summary['recommendations']:
-        st.subheader("💡 Recommendations")
         for rec in summary['recommendations']:
             st.write(f"• {rec}")
+    
+    # ExPASy-specific recommendations
+    if expasy_data:
+        st.write("**🌐 ExPASy Stability Recommendations:**")
+        if expasy_data['recommendations']:
+            for rec in expasy_data['recommendations']:
+                st.write(f"• {rec}")
+        
+        # Additional stability insights
+        stability = expasy_data['stability_analysis']
+        if stability['risk_level'] == 'Low':
+            st.write("• ✅ **Excellent stability profile** - suitable for experimental validation")
+        elif stability['risk_level'] == 'Medium':
+            st.write("• ⚠️ **Moderate stability** - consider optimization before experimental testing")
+        else:
+            st.write("• ❌ **High stability risk** - significant optimization required")
+        
+        # Instability index insights
+        instability_index = expasy_data['basic_properties']['instability_index']
+        if instability_index > 40:
+            st.write("• ⚠️ **High instability index** - consider sequence modifications")
+        elif instability_index > 30:
+            st.write("• ⚠️ **Moderate instability** - monitor during experiments")
+        else:
+            st.write("• ✅ **Low instability index** - good stability characteristics")
 
 
 def main():
@@ -630,21 +675,18 @@ def main():
                                 analysis_result = peptide_analyzer.comprehensive_analysis(peptide['sequence'])
                                 
                                 if analysis_result['success']:
-                                    display_peptide_analysis(peptide, analysis_result, i)
-                                    
-                                    # ExPASy stability analysis
+                                    # ExPASy stability analysis (if enabled)
+                                    expasy_data = None
                                     if enable_expasy_analysis:
-                                        st.markdown("---")
-                                        st.subheader("🌐 ExPASy ProtParam Stability Analysis")
-                                        
                                         with st.spinner("Analyzing with ExPASy ProtParam..."):
                                             expasy_result = expasy_integration.analyze_peptide_stability(peptide['sequence'])
                                             
                                             if expasy_result['success']:
+                                                expasy_data = expasy_result['data']
                                                 st.success("✅ ExPASy analysis completed!")
                                                 
                                                 # Display ExPASy results
-                                                expasy_data = expasy_result['data']
+                                                st.subheader("🌐 ExPASy ProtParam Stability Analysis")
                                                 
                                                 # Basic properties from ExPASy
                                                 col1, col2, col3, col4 = st.columns(4)
@@ -682,12 +724,6 @@ def main():
                                                 with col4:
                                                     st.metric("Composition", factors['composition_stability'])
                                                 
-                                                # Recommendations
-                                                if expasy_data['recommendations']:
-                                                    st.subheader("💡 ExPASy Recommendations")
-                                                    for rec in expasy_data['recommendations']:
-                                                        st.write(f"• {rec}")
-                                                
                                                 # Amino acid composition
                                                 if expasy_data['amino_acid_composition']:
                                                     st.subheader("🧬 Amino Acid Composition (ExPASy)")
@@ -704,6 +740,9 @@ def main():
                                             else:
                                                 st.warning(f"⚠️ ExPASy analysis failed: {expasy_result['error']}")
                                                 st.info("💡 This may be due to network issues or service availability. The analysis will continue with local calculations.")
+                                    
+                                    # Display comprehensive analysis with ExPASy integration
+                                    display_peptide_analysis(peptide, analysis_result, i, expasy_data)
                                 else:
                                     st.error(f"❌ Analysis failed: {analysis_result['error']}")
                     
@@ -810,6 +849,45 @@ def main():
                                 
                                 fig_expasy.update_layout(height=600, title_text="ExPASy Stability Comparison")
                                 st.plotly_chart(fig_expasy, use_container_width=True, key="expasy_comparison_chart")
+                                
+                                # Enhanced comparison summary with ExPASy insights
+                                st.subheader("🌐 ExPASy Stability Assessment Summary")
+                                
+                                if expasy_comparison_data:
+                                    # Find best and worst performers based on ExPASy data
+                                    expasy_df = pd.DataFrame(expasy_comparison_data)
+                                    best_stability = expasy_df.loc[expasy_df['ExPASy Stability Score'].idxmax()]
+                                    worst_stability = expasy_df.loc[expasy_df['ExPASy Stability Score'].idxmin()]
+                                    
+                                    col1, col2 = st.columns(2)
+                                    with col1:
+                                        st.info(f"**🏆 Best Stability:** {best_stability['Peptide']} ({best_stability['Sequence']})")
+                                        st.write(f"• Stability Score: {best_stability['ExPASy Stability Score']:.3f}")
+                                        st.write(f"• Risk Level: {best_stability['ExPASy Risk Level']}")
+                                        st.write(f"• Instability Index: {best_stability['Instability Index']:.1f}")
+                                    
+                                    with col2:
+                                        st.warning(f"**⚠️ Lowest Stability:** {worst_stability['Peptide']} ({worst_stability['Sequence']})")
+                                        st.write(f"• Stability Score: {worst_stability['ExPASy Stability Score']:.3f}")
+                                        st.write(f"• Risk Level: {worst_stability['ExPASy Risk Level']}")
+                                        st.write(f"• Instability Index: {worst_stability['Instability Index']:.1f}")
+                                    
+                                    # Overall recommendations
+                                    st.subheader("💡 ExPASy-Based Recommendations")
+                                    avg_stability = expasy_df['ExPASy Stability Score'].mean()
+                                    high_risk_count = len(expasy_df[expasy_df['ExPASy Risk Level'] == 'High'])
+                                    
+                                    if avg_stability > 0.7:
+                                        st.success("✅ **Overall excellent stability profile** - All peptides show good stability characteristics")
+                                    elif avg_stability > 0.5:
+                                        st.info("⚠️ **Moderate stability profile** - Consider optimization for lower-performing peptides")
+                                    else:
+                                        st.error("❌ **Poor stability profile** - Significant optimization required for all peptides")
+                                    
+                                    if high_risk_count > 0:
+                                        st.warning(f"⚠️ **{high_risk_count} peptide(s) with high stability risk** - Consider sequence modifications")
+                                    else:
+                                        st.success("✅ **No high-risk peptides** - All peptides have acceptable stability profiles")
                 else:
                     st.info("ℹ️ Generate peptides and enable advanced analysis to see comprehensive results.")
             
