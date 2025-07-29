@@ -550,11 +550,12 @@ def main():
             pdb_content = uploaded_file.read().decode('utf-8')
             
             # Create tabs for different analysis sections
-            tab1, tab2, tab3, tab4 = st.tabs([
+            tab1, tab2, tab3, tab4, tab5 = st.tabs([
                 "🔬 Basic Analysis", 
                 "🧬 Peptide Generation", 
                 "📊 Advanced Analysis",
-                "📈 Comparison"
+                "📈 Comparison",
+                "🔍 Custom Peptide Analysis"
             ])
             
             with tab1:
@@ -1230,6 +1231,243 @@ def main():
                     3. Configure refinement focus and number of peptides
                     4. Click **Generate Hybrid Peptides**
                     5. Return to this tab to view detailed comparison
+                    """)
+            
+            with tab5:
+                st.header("🔍 Custom Peptide Analysis")
+                
+                st.info("💡 **Analyze your own peptides**: Input custom peptide sequences and get comprehensive biochemical analysis.")
+                
+                # Input method selection
+                input_method = st.radio(
+                    "Choose input method:",
+                    ["Single Peptide", "Multiple Peptides", "Upload CSV File"],
+                    help="Select how you want to input your peptides"
+                )
+                
+                peptides_to_analyze = []
+                
+                if input_method == "Single Peptide":
+                    peptide_sequence = st.text_input(
+                        "Enter peptide sequence:",
+                        placeholder="e.g., MKTVRQERLKSIVRILERSKEPVSGAQLAEELSVSRQVIVQDIAYLRSLGYNIVATPRGYVLAGG",
+                        help="Enter a single peptide sequence using standard amino acid codes"
+                    )
+                    
+                    if peptide_sequence:
+                        # Validate sequence
+                        valid_aa = set('ACDEFGHIKLMNPQRSTVWY')
+                        if all(aa in valid_aa for aa in peptide_sequence.upper()):
+                            peptides_to_analyze = [{'sequence': peptide_sequence.upper(), 'name': 'Custom Peptide 1'}]
+                            st.success(f"✅ Valid peptide sequence: {peptide_sequence.upper()}")
+                        else:
+                            st.error("❌ Invalid amino acid sequence. Please use standard amino acid codes (ACDEFGHIKLMNPQRSTVWY).")
+                
+                elif input_method == "Multiple Peptides":
+                    st.markdown("**Enter multiple peptides (one per line):**")
+                    peptide_text = st.text_area(
+                        "Peptide sequences:",
+                        placeholder="MKTVRQERLKSIVRILERSKEPVSGAQLAEELSVSRQVIVQDIAYLRSLGYNIVATPRGYVLAGG\nACDEFGHIKLMNPQRSTVWY\nMKTVRQERLKSIVRILERSKEPVSGAQLAEELSVSRQVIVQDIAYLRSLGYNIVATPRGYVLAGG",
+                        height=150,
+                        help="Enter multiple peptide sequences, one per line"
+                    )
+                    
+                    if peptide_text:
+                        lines = peptide_text.strip().split('\n')
+                        valid_aa = set('ACDEFGHIKLMNPQRSTVWY')
+                        
+                        for i, line in enumerate(lines):
+                            sequence = line.strip().upper()
+                            if sequence and all(aa in valid_aa for aa in sequence):
+                                peptides_to_analyze.append({
+                                    'sequence': sequence, 
+                                    'name': f'Custom Peptide {i+1}'
+                                })
+                        
+                        if peptides_to_analyze:
+                            st.success(f"✅ Valid peptides found: {len(peptides_to_analyze)}")
+                        else:
+                            st.error("❌ No valid peptide sequences found. Please check your input.")
+                
+                elif input_method == "Upload CSV File":
+                    uploaded_csv = st.file_uploader(
+                        "Upload CSV file with peptide sequences:",
+                        type=['csv'],
+                        help="CSV should have columns: 'sequence' (required), 'name' (optional)"
+                    )
+                    
+                    if uploaded_csv:
+                        try:
+                            df = pd.read_csv(uploaded_csv)
+                            if 'sequence' in df.columns:
+                                valid_aa = set('ACDEFGHIKLMNPQRSTVWY')
+                                
+                                for idx, row in df.iterrows():
+                                    sequence = str(row['sequence']).strip().upper()
+                                    if sequence and all(aa in valid_aa for aa in sequence):
+                                        name = row.get('name', f'Peptide {idx+1}')
+                                        peptides_to_analyze.append({
+                                            'sequence': sequence,
+                                            'name': name
+                                        })
+                                
+                                if peptides_to_analyze:
+                                    st.success(f"✅ Valid peptides loaded: {len(peptides_to_analyze)}")
+                                else:
+                                    st.error("❌ No valid peptide sequences found in CSV.")
+                            else:
+                                st.error("❌ CSV must contain a 'sequence' column.")
+                        except Exception as e:
+                            st.error(f"❌ Error reading CSV file: {str(e)}")
+                
+                # Analysis section
+                if peptides_to_analyze:
+                    st.subheader("🔬 Comprehensive Analysis")
+                    
+                    # Analysis options
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        include_expasy = st.checkbox("Include ExPASy analysis", value=True, help="Get additional protein analysis from ExPASy")
+                        include_solubility = st.checkbox("Include solubility prediction", value=True, help="Predict solubility in different solvents")
+                    
+                    with col2:
+                        include_visualization = st.checkbox("Include property visualization", value=True, help="Show charts and graphs of peptide properties")
+                        export_results = st.checkbox("Export results", value=True, help="Download analysis results as CSV")
+                    
+                    # Analyze button
+                    if st.button("🔬 Analyze Peptides", use_container_width=True):
+                        with st.spinner("Analyzing peptides..."):
+                            try:
+                                analyzer = AdvancedPeptideAnalyzer()
+                                solubility_predictor = SolubilityPredictor()
+                                expasy_integration = ExPASyIntegration()
+                                
+                                analysis_results = []
+                                
+                                for i, peptide in enumerate(peptides_to_analyze):
+                                    st.info(f"Analyzing {peptide['name']}: {peptide['sequence']}")
+                                    
+                                    # Basic analysis
+                                    analysis_result = analyzer.comprehensive_analysis(peptide['sequence'])
+                                    
+                                    if analysis_result['success']:
+                                        result = {
+                                            'peptide': peptide,
+                                            'basic_analysis': analysis_result,
+                                            'solubility_data': None,
+                                            'expasy_data': None
+                                        }
+                                        
+                                        # Solubility prediction
+                                        if include_solubility:
+                                            solubility_result = solubility_predictor.predict_solubility(peptide['sequence'])
+                                            result['solubility_data'] = solubility_result
+                                        
+                                        # ExPASy analysis
+                                        if include_expasy:
+                                            expasy_result = expasy_integration.analyze_protein(peptide['sequence'])
+                                            result['expasy_data'] = expasy_result
+                                        
+                                        analysis_results.append(result)
+                                    
+                                    else:
+                                        st.warning(f"⚠️ Analysis failed for {peptide['name']}: {analysis_result['error']}")
+                                
+                                # Store results
+                                st.session_state['custom_analysis_results'] = analysis_results
+                                st.success(f"✅ Analysis completed for {len(analysis_results)} peptides!")
+                                
+                                # Display results
+                                if analysis_results:
+                                    st.subheader("📊 Analysis Results")
+                                    
+                                    # Create summary table
+                                    summary_data = []
+                                    for result in analysis_results:
+                                        peptide = result['peptide']
+                                        basic = result['basic_analysis']['analysis']['basic_properties']
+                                        
+                                        summary_data.append({
+                                            'Name': peptide['name'],
+                                            'Sequence': peptide['sequence'],
+                                            'Length': basic['length'],
+                                            'MW (Da)': round(basic['molecular_weight'], 1),
+                                            'pI': round(basic['isoelectric_point'], 2),
+                                            'GRAVY': round(basic['gravy_score'], 3),
+                                            'Net Charge': basic['net_charge']
+                                        })
+                                    
+                                    summary_df = pd.DataFrame(summary_data)
+                                    st.dataframe(summary_df, use_container_width=True)
+                                    
+                                    # Export results
+                                    if export_results:
+                                        csv_data = summary_df.to_csv(index=False)
+                                        st.download_button(
+                                            label="📥 Download Analysis Results",
+                                            data=csv_data,
+                                            file_name="custom_peptide_analysis.csv",
+                                            mime="text/csv"
+                                        )
+                                    
+                                    # Detailed analysis for each peptide
+                                    for i, result in enumerate(analysis_results):
+                                        with st.expander(f"🔬 Detailed Analysis: {result['peptide']['name']}"):
+                                            display_peptide_analysis(
+                                                result['peptide'], 
+                                                result['basic_analysis'], 
+                                                i+1, 
+                                                result['expasy_data']
+                                            )
+                                    
+                                    # Property visualization
+                                    if include_visualization and len(analysis_results) > 1:
+                                        st.subheader("📈 Property Comparison")
+                                        
+                                        # Create comparison charts
+                                        properties = ['molecular_weight', 'isoelectric_point', 'gravy_score', 'net_charge']
+                                        property_names = ['Molecular Weight', 'Isoelectric Point', 'GRAVY Score', 'Net Charge']
+                                        
+                                        fig = make_subplots(
+                                            rows=2, cols=2,
+                                            subplot_titles=property_names,
+                                            specs=[[{"type": "bar"}, {"type": "bar"}],
+                                               [{"type": "bar"}, {"type": "bar"}]]
+                                        )
+                                        
+                                        for idx, (prop, name) in enumerate(zip(properties, property_names)):
+                                            values = [result['basic_analysis']['analysis']['basic_properties'][prop] for result in analysis_results]
+                                            names = [result['peptide']['name'] for result in analysis_results]
+                                            
+                                            row = (idx // 2) + 1
+                                            col = (idx % 2) + 1
+                                            
+                                            fig.add_trace(
+                                                go.Bar(x=names, y=values, name=name),
+                                                row=row, col=col
+                                            )
+                                        
+                                        fig.update_layout(height=600, title_text="Peptide Property Comparison")
+                                        st.plotly_chart(fig, use_container_width=True)
+                                
+                            except Exception as e:
+                                st.error(f"❌ Analysis error: {str(e)}")
+                
+                else:
+                    st.info("ℹ️ Enter peptide sequences above to begin analysis.")
+                    st.markdown("""
+                    **Supported input formats:**
+                    - **Single Peptide**: Enter one peptide sequence
+                    - **Multiple Peptides**: Enter multiple sequences (one per line)
+                    - **CSV Upload**: Upload a CSV file with 'sequence' column
+                    
+                    **Analysis includes:**
+                    - Comprehensive biochemical properties
+                    - Secondary structure prediction
+                    - Binding affinity estimation
+                    - Stability and immunogenicity analysis
+                    - Solubility prediction (optional)
+                    - ExPASy integration (optional)
                     """)
         
 
