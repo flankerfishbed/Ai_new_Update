@@ -230,7 +230,7 @@ def display_peptide_analysis(peptide: Dict[str, Any], analysis_result: Dict[str,
         options=reference_options[1:],  # Exclude "None"
         default=["GRGDS", "RGD"],
         help="Choose reference peptides to compare solubility profiles",
-        key=f"reference_peptides_{peptide_index}"
+        key=f"reference_peptides_{peptide_index}_{peptide['sequence'][:10]}"
     )
     
     # Create enhanced solubility chart with references
@@ -279,7 +279,7 @@ def display_peptide_analysis(peptide: Dict[str, Any], analysis_result: Dict[str,
             x=1
         )
     )
-    st.plotly_chart(fig, use_container_width=True, key=f"solubility_chart_{peptide_index}")
+    st.plotly_chart(fig, use_container_width=True, key=f"solubility_chart_{peptide_index}_{peptide['sequence'][:10]}")
     
     # Display reference peptide information
     if selected_references:
@@ -311,7 +311,7 @@ def display_peptide_analysis(peptide: Dict[str, Any], analysis_result: Dict[str,
                     ref_df["Peptide"] = ref_key
                     solubility_df = pd.concat([solubility_df, ref_df], ignore_index=True)
     
-    st.dataframe(solubility_df, use_container_width=True, key=f"solubility_table_{peptide_index}")
+    st.dataframe(solubility_df, use_container_width=True, key=f"solubility_table_{peptide_index}_{peptide['sequence'][:10]}")
     
     # Interaction potential
     st.subheader("⚡ Interaction Potential")
@@ -329,10 +329,10 @@ def display_peptide_analysis(peptide: Dict[str, Any], analysis_result: Dict[str,
         yaxis_title="Count",
         height=400
     )
-    st.plotly_chart(fig, use_container_width=True, key=f"interaction_chart_{peptide_index}")
+    st.plotly_chart(fig, use_container_width=True, key=f"interaction_chart_{peptide_index}_{peptide['sequence'][:10]}")
     
     # Summary and recommendations with ExPASy integration
-    st.subheader("📊 Analysis Summary")
+    st.subheader("�� Analysis Summary")
     summary = analysis_result['summary']
     
         # Enhanced summary with ExPASy stability assessment
@@ -1412,7 +1412,8 @@ def main():
                                     
                                     # Detailed analysis for each peptide
                                     for i, result in enumerate(analysis_results):
-                                        with st.expander(f"🔬 Detailed Analysis: {result['peptide']['name']}"):
+                                        peptide_name = result['peptide']['name'].replace(' ', '_').lower()
+                                        with st.expander(f"🔬 Detailed Analysis: {result['peptide']['name']}", key=f"custom_analysis_{peptide_name}_{i}"):
                                             display_peptide_analysis(
                                                 result['peptide'], 
                                                 result['basic_analysis'], 
