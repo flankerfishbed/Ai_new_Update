@@ -342,8 +342,8 @@ def display_peptide_analysis(peptide: Dict[str, Any], analysis_result: Dict[str,
         st.metric("Overall Score", f"{summary['overall_score']:.3f}")
         
         # Include ExPASy stability assessment if available
-        if expasy_data:
-            stability = expasy_data['stability_analysis']
+        if expasy_data and expasy_data.get('success') and expasy_data.get('data', {}).get('stability_analysis'):
+            stability = expasy_data['data']['stability_analysis']
             st.metric("ExPASy Stability Score", f"{stability['stability_score']:.3f}")
             st.metric("ExPASy Risk Level", stability['risk_level'])
         
@@ -351,8 +351,8 @@ def display_peptide_analysis(peptide: Dict[str, Any], analysis_result: Dict[str,
         filtered_strengths = summary['key_strengths'].copy() if summary['key_strengths'] else []
         
         # Remove stability-related strengths if ExPASy shows poor stability
-        if expasy_data:
-            stability = expasy_data['stability_analysis']
+        if expasy_data and expasy_data.get('success') and expasy_data.get('data', {}).get('stability_analysis'):
+            stability = expasy_data['data']['stability_analysis']
             if stability['risk_level'] in ['High', 'Medium']:
                 filtered_strengths = [s for s in filtered_strengths if 'stability' not in s.lower() and 'stable' not in s.lower()]
         
@@ -366,8 +366,8 @@ def display_peptide_analysis(peptide: Dict[str, Any], analysis_result: Dict[str,
         filtered_concerns = summary['key_concerns'].copy() if summary['key_concerns'] else []
         
         # Remove stability-related concerns if ExPASy shows good stability
-        if expasy_data:
-            stability = expasy_data['stability_analysis']
+        if expasy_data and expasy_data.get('success') and expasy_data.get('data', {}).get('stability_analysis'):
+            stability = expasy_data['data']['stability_analysis']
             if stability['risk_level'] == 'Low':
                 filtered_concerns = [c for c in filtered_concerns if 'stability' not in c.lower() and 'stable' not in c.lower()]
         
