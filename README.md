@@ -29,6 +29,7 @@ A comprehensive computational biology platform for AI-driven peptide design and 
 - **Detailed Reasoning**: AI explains why each peptide was suggested
 - **Modular Architecture**: Clean, extensible pipeline components
 - **🌐 PepINVENT Integration**: Advanced peptide generation with non-natural amino acids using reinforcement learning
+- **🧬 Hybrid Generation**: Combine PepINVENT and LLM for enhanced peptide design with side-by-side comparison
 
 ## 🚀 Quick Start
 
@@ -82,14 +83,23 @@ A comprehensive computational biology platform for AI-driven peptide design and 
 - **Advanced Analysis**: Enable surface analysis, interaction analysis, etc.
 
 ### 3. Generate Peptides
-- Enter your API key for the chosen LLM provider
-- Click "Generate Peptide Candidates"
+- **Standard Generation**: Enter your API key for the chosen LLM provider
+- **PepINVENT Generation**: Use reinforcement learning with non-natural amino acids
+- **Hybrid Generation**: Combine PepINVENT and LLM for enhanced results
+  - Choose refinement focus (solubility, stability, binding, balanced)
+  - Select number of peptides (2-5)
+  - View side-by-side comparison of original vs refined peptides
 - Review AI-generated peptides with detailed reasoning
 
 ### 4. Advanced Analysis
 - **Basic Analysis**: Protein structure and surface properties
 - **Interaction Analysis**: Binding sites and pockets on target protein
 - **Advanced Analysis**: Comprehensive peptide property analysis
+- **Comparison Analysis**: Side-by-side comparison of original vs refined peptides
+  - Property change visualization
+  - Improvement metrics and scoring
+  - Top candidate selection
+  - CSV export functionality
 - **3D Visualization**: Interactive structure viewer with highlights
 
 ### 5. Comparative Analysis
@@ -126,6 +136,8 @@ new-peptides/
 │   ├── pdb_parser.py          # Protein structure parsing
 │   ├── surface_analyzer.py    # Surface analysis
 │   ├── peptide_generator.py   # AI peptide generation
+│   ├── hybrid_peptide_generator.py # Hybrid PepINVENT + LLM generation
+│   ├── pepinvent_integration.py # PepINVENT integration
 │   ├── enhanced_visualizer.py # Advanced 3D visualization
 │   ├── peptide_analyzer.py    # Advanced peptide analysis
 │   ├── interaction_analyzer.py # Protein-protein interaction analysis
@@ -149,6 +161,14 @@ new-peptides/
 - **Non-Natural Amino Acids**: Support for extended amino acid alphabet
 - **Multi-Parameter Optimization**: Optimizes multiple peptide properties simultaneously
 - **Sampling Methods**: Both sampling and RL-based generation approaches
+
+### Hybrid Generation
+- **Sequential Enhancement**: PepINVENT → LLM Analysis → Enhanced Peptides
+- **Parallel Generation**: Both methods → LLM Ranking → Best Candidates
+- **LLM-Guided PepINVENT**: LLM Analysis → PepINVENT Generation → Interpretation
+- **PepINVENT-Enhanced LLM**: PepINVENT Insights → Enhanced LLM Prompts
+- **Side-by-Side Comparison**: Original vs Refined peptides with detailed analysis
+- **Property Tracking**: Comprehensive biochemical property analysis and improvement tracking
 
 ### Interaction Analysis
 - **Surface Detection**: Solvent accessibility calculation

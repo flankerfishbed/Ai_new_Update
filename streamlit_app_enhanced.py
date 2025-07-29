@@ -19,6 +19,7 @@ from modules.peptide_analyzer import AdvancedPeptideAnalyzer
 # from modules.interaction_analyzer import InteractionAnalyzer  # Disabled for simplified visualization
 from modules.expasy_integration import ExPASyIntegration
 from modules.pepinvent_integration import PepINVENTIntegration
+from modules.hybrid_peptide_generator import HybridPeptideGenerator
 import matplotlib.pyplot as plt
 
 # Page configuration
@@ -482,7 +483,15 @@ def main():
                 
                 generation_method = st.selectbox(
                     "Generation Method",
-                    ["LLM-Based", "PepINVENT Sampling", "PepINVENT RL", "Both"],
+                    [
+                        "LLM-Based", 
+                        "PepINVENT Sampling", 
+                        "PepINVENT RL", 
+                        "Hybrid - Sequential Enhancement",
+                        "Hybrid - Parallel Generation", 
+                        "Hybrid - LLM-Guided PepINVENT",
+                        "Hybrid - PepINVENT-Enhanced LLM"
+                    ],
                     help="Choose peptide generation method"
                 )
                 
@@ -557,10 +566,11 @@ def main():
             pdb_content = uploaded_file.read().decode('utf-8')
             
             # Create tabs for different analysis sections
-            tab1, tab2, tab3 = st.tabs([
+            tab1, tab2, tab3, tab4 = st.tabs([
                 "🔬 Basic Analysis", 
                 "🧬 Peptide Generation", 
-                "📊 Advanced Analysis"
+                "📊 Advanced Analysis",
+                "📈 Comparison"
             ])
             
             with tab1:
@@ -751,6 +761,112 @@ def main():
                                     
                             except Exception as e:
                                 st.error(f"❌ Error during PepINVENT generation: {str(e)}")
+                
+                # Hybrid generation methods
+                elif "Hybrid" in generation_method:
+                    st.info("🧬 **Hybrid Generation**: Combining PepINVENT and LLM for enhanced results.")
+                    
+                    # Hybrid-specific settings
+                    refinement_focus = st.selectbox(
+                        "Refinement Focus",
+                        ["balanced", "solubility", "stability", "binding"],
+                        help="Choose the primary focus for LLM refinement"
+                    )
+                    
+                    num_peptides = st.slider("Number of Peptides", 2, 5, 3, 
+                                           help="Number of peptides to generate and refine")
+                    
+                    if st.button("🚀 GENERATE HYBRID PEPTIDES", use_container_width=True):
+                        with st.spinner("Generating and refining peptides with hybrid approach..."):
+                            try:
+                                # Initialize hybrid generator
+                                hybrid_generator = HybridPeptideGenerator(llm_provider, pepinvent_path)
+                                
+                                # Map generation method to strategy
+                                strategy_map = {
+                                    "Hybrid - Sequential Enhancement": "sequential",
+                                    "Hybrid - Parallel Generation": "parallel", 
+                                    "Hybrid - LLM-Guided PepINVENT": "llm_guided",
+                                    "Hybrid - PepINVENT-Enhanced LLM": "enhanced_llm"
+                                }
+                                
+                                strategy = strategy_map.get(generation_method, "parallel")
+                                
+                                # Prepare context data
+                                context_data = {
+                                    'sequence': st.session_state['parsed_data']['sequence'],
+                                    'chain_id': chain_id,
+                                    'num_peptides': num_peptides,
+                                    'surface_data': st.session_state.get('surface_data', {})
+                                }
+                                
+                                # Generate and refine peptides
+                                hybrid_result = hybrid_generator.generate_and_refine_peptides(
+                                    context_data, num_peptides, refinement_focus
+                                )
+                                
+                                if hybrid_result['success']:
+                                    st.success(f"✅ Generated {len(hybrid_result['original_peptides'])} original and {len(hybrid_result['refined_peptides'])} refined peptides!")
+                                    st.info(hybrid_result['explanation'])
+                                    
+                                    # Store results for comparison tab
+                                    st.session_state['hybrid_result'] = hybrid_result
+                                    st.session_state['hybrid_generator'] = hybrid_generator
+                                    
+                                    # Display strategy-specific information
+                                    if hybrid_result.get('metadata', {}).get('strategy') == 'sequential_enhancement':
+                                        st.info(f"📊 **Strategy**: PepINVENT → LLM Enhancement")
+                                        st.info(f"🔬 **Enhancement**: {hybrid_result['metadata']['enhanced_peptides']} peptides enhanced")
+                                        
+                                    elif hybrid_result.get('metadata', {}).get('strategy') == 'parallel_generation':
+                                        st.info(f"📊 **Strategy**: Parallel Generation → LLM Ranking")
+                                        st.info(f"🔬 **Generated**: {hybrid_result['metadata']['total_generated']} total, {hybrid_result['metadata']['final_selected']} selected")
+                                        
+                                    elif hybrid_result.get('metadata', {}).get('strategy') == 'llm_guided_pepinvent':
+                                        st.info(f"📊 **Strategy**: LLM Analysis → PepINVENT Generation")
+                                        if hybrid_result.get('protein_analysis'):
+                                            with st.expander("🔍 Protein Analysis"):
+                                                st.text(hybrid_result['protein_analysis'])
+                                        if hybrid_result.get('interpretation'):
+                                            with st.expander("🤖 LLM Interpretation"):
+                                                st.text(hybrid_result['interpretation'])
+                                                
+                                    elif hybrid_result.get('metadata', {}).get('strategy') == 'pepinvent_enhanced_llm':
+                                        st.info(f"📊 **Strategy**: PepINVENT Insights → Enhanced LLM")
+                                        st.info(f"📈 **Enhanced**: LLM prompts enhanced with PepINVENT chemical knowledge")
+                                    
+                                    # Display top candidates
+                                    top_candidates = hybrid_generator.get_top_candidates(3)
+                                    if top_candidates:
+                                        st.subheader("🏆 Top Candidates")
+                                        for candidate in top_candidates:
+                                            st.markdown(f"""
+                                            <div class="peptide-card">
+                                                <div class="peptide-header">
+                                                    <span class="peptide-sequence">Rank {candidate['rank']}: {candidate['refined_sequence']}</span>
+                                                    <span class="metric-badge">Score: {candidate['improvement_score']:.1f}/10</span>
+                                                </div>
+                                                <div class="peptide-content">
+                                                    <div>
+                                                        <h5 style="color: #ffffff; margin-bottom: 0.5rem;">Improvements:</h5>
+                                                        <ul style="color: rgba(255, 255, 255, 0.8);">
+                                                            {''.join([f'<li>{imp}</li>' for imp in candidate['improvements']])}
+                                                        </ul>
+                                                    </div>
+                                                    <div>
+                                                        <h5 style="color: #ffffff; margin-bottom: 0.5rem;">Reasoning:</h5>
+                                                        <p style="color: rgba(255, 255, 255, 0.8); line-height: 1.6;">{candidate['reasoning']}</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            """, unsafe_allow_html=True)
+                                    
+                                else:
+                                    st.error(f"❌ Hybrid generation failed: {hybrid_result['error']}")
+                                    st.info(hybrid_result['explanation'])
+                                    
+                            except Exception as e:
+                                st.error(f"❌ Error during hybrid generation: {str(e)}")
                 
                 # Standard LLM-based generation
                 st.subheader("🤖 LLM-Based Generation")
@@ -1061,6 +1177,164 @@ def main():
                 else:
                     st.info("ℹ️ Generate peptides and enable advanced analysis to see comprehensive results.")
             
+            with tab4:
+                st.header("📈 Side-by-Side Comparison")
+                
+                # Check if hybrid results are available
+                if 'hybrid_result' in st.session_state and 'hybrid_generator' in st.session_state:
+                    hybrid_result = st.session_state['hybrid_result']
+                    hybrid_generator = st.session_state['hybrid_generator']
+                    
+                    st.success("✅ Hybrid analysis results available for comparison!")
+                    
+                    # Display overall improvement metrics
+                    if hybrid_result.get('comparison_data', {}).get('improvement_metrics'):
+                        metrics = hybrid_result['comparison_data']['improvement_metrics']
+                        st.subheader("📊 Overall Improvement Metrics")
+                        
+                        col1, col2, col3 = st.columns(3)
+                        with col1:
+                            st.metric("Average Improvement Score", f"{metrics.get('average_improvement_score', 0):.1f}/10")
+                        with col2:
+                            st.metric("Total Peptides Analyzed", metrics.get('total_peptides_analyzed', 0))
+                        with col3:
+                            st.metric("Strategy Used", hybrid_result.get('metadata', {}).get('strategy', 'Unknown'))
+                    
+                    # Create comparison DataFrame
+                    comparison_df = hybrid_generator.get_comparison_dataframe()
+                    
+                    if not comparison_df.empty:
+                        st.subheader("📋 Detailed Comparison Table")
+                        
+                        # Add color coding for improvements
+                        def color_improvements(val):
+                            if isinstance(val, bool):
+                                return 'background-color: green' if val else 'background-color: red'
+                            return ''
+                        
+                        # Apply styling
+                        styled_df = comparison_df.style.applymap(color_improvements, subset=[col for col in comparison_df.columns if 'Improved' in col])
+                        st.dataframe(styled_df, use_container_width=True)
+                        
+                        # Download options
+                        col1, col2 = st.columns(2)
+                        with col1:
+                            if st.button("📥 Download Comparison CSV"):
+                                csv_filename = hybrid_generator.export_comparison_csv()
+                                if csv_filename:
+                                    with open(csv_filename, 'r') as f:
+                                        csv_data = f.read()
+                                    st.download_button(
+                                        label="💾 Download CSV",
+                                        data=csv_data,
+                                        file_name="peptide_comparison.csv",
+                                        mime="text/csv"
+                                    )
+                        
+                        with col2:
+                            if st.button("🏆 Show Top Candidates"):
+                                top_candidates = hybrid_generator.get_top_candidates(3)
+                                if top_candidates:
+                                    st.subheader("🏆 Top 3 Candidates")
+                                    for candidate in top_candidates:
+                                        st.markdown(f"""
+                                        <div class="peptide-card">
+                                            <div class="peptide-header">
+                                                <span class="peptide-sequence">Rank {candidate['rank']}: {candidate['refined_sequence']}</span>
+                                                <span class="metric-badge">Score: {candidate['improvement_score']:.1f}/10</span>
+                                            </div>
+                                            <div class="peptide-content">
+                                                <div>
+                                                    <h5 style="color: #ffffff; margin-bottom: 0.5rem;">Original:</h5>
+                                                    <p style="color: rgba(255, 255, 255, 0.8);">{candidate['original_sequence']}</p>
+                                                </div>
+                                                <div>
+                                                    <h5 style="color: #ffffff; margin-bottom: 0.5rem;">Improvements:</h5>
+                                                    <ul style="color: rgba(255, 255, 255, 0.8);">
+                                                        {''.join([f'<li>{imp}</li>' for imp in candidate['improvements']])}
+                                                    </ul>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        """, unsafe_allow_html=True)
+                    
+                    # Property change visualization
+                    if hybrid_result.get('comparison_data', {}).get('detailed_comparison'):
+                        st.subheader("📈 Property Change Analysis")
+                        
+                        # Create property change chart
+                        property_changes = []
+                        for comparison in hybrid_result['comparison_data']['detailed_comparison']:
+                            pair_id = comparison['pair_id']
+                            changes = comparison['property_changes']
+                            
+                            for prop, change_data in changes.items():
+                                if 'Improved' in prop:
+                                    continue
+                                property_changes.append({
+                                    'Pair': pair_id,
+                                    'Property': prop.replace('_', ' ').title(),
+                                    'Original': change_data['original'],
+                                    'Refined': change_data['refined'],
+                                    'Change': change_data['change'],
+                                    'Change_Percent': change_data['change_percent']
+                                })
+                        
+                        if property_changes:
+                            changes_df = pd.DataFrame(property_changes)
+                            
+                            # Create property change visualization
+                            fig = make_subplots(
+                                rows=2, cols=2,
+                                subplot_titles=('Property Changes (%)', 'Original vs Refined Values', 'Improvement Distribution', 'Change Analysis'),
+                                specs=[[{"type": "bar"}, {"type": "scatter"}],
+                                   [{"type": "bar"}, {"type": "bar"}]]
+                            )
+                            
+                            # Property changes percentage
+                            fig.add_trace(
+                                go.Bar(x=changes_df['Property'], y=changes_df['Change_Percent'], name='Change %'),
+                                row=1, col=1
+                            )
+                            
+                            # Original vs Refined scatter
+                            fig.add_trace(
+                                go.Scatter(x=changes_df['Original'], y=changes_df['Refined'], mode='markers', name='Original vs Refined'),
+                                row=1, col=2
+                            )
+                            
+                            # Improvement distribution
+                            improved_count = len(changes_df[changes_df['Change_Percent'] > 0])
+                            total_count = len(changes_df)
+                            fig.add_trace(
+                                go.Bar(x=['Improved', 'Not Improved'], y=[improved_count, total_count - improved_count], name='Improvement Status'),
+                                row=2, col=1
+                            )
+                            
+                            fig.update_layout(height=600, title_text="Property Change Analysis")
+                            st.plotly_chart(fig, use_container_width=True)
+                            
+                            # Summary statistics
+                            st.subheader("📊 Summary Statistics")
+                            col1, col2, col3 = st.columns(3)
+                            with col1:
+                                st.metric("Total Properties Analyzed", len(property_changes))
+                            with col2:
+                                st.metric("Properties Improved", improved_count)
+                            with col3:
+                                st.metric("Improvement Rate", f"{(improved_count/total_count)*100:.1f}%")
+                
+                else:
+                    st.info("ℹ️ Run hybrid peptide generation to see side-by-side comparison results.")
+                    st.markdown("""
+                    **To see comparison results:**
+                    1. Go to the **Peptide Generation** tab
+                    2. Select a **Hybrid** generation method
+                    3. Configure refinement focus and number of peptides
+                    4. Click **Generate Hybrid Peptides**
+                    5. Return to this tab to view detailed comparison
+                    """)
+        
 
         
         st.markdown('</div>', unsafe_allow_html=True)
