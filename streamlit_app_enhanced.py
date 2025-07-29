@@ -377,8 +377,8 @@ def display_peptide_analysis(peptide: Dict[str, Any], analysis_result: Dict[str,
                 st.write(f"⚠️ {concern}")
     
         # Add ExPASy-specific concerns if available
-        if expasy_data:
-            stability = expasy_data['stability_analysis']
+        if expasy_data and expasy_data.get('success') and expasy_data.get('data', {}).get('stability_analysis'):
+            stability = expasy_data['data']['stability_analysis']
             if stability['risk_level'] in ['High', 'Medium']:
                 st.write(f"⚠️ **ExPASy Stability Risk:** {stability['risk_level']} risk level")
                 if stability['stability_factors']['hydrophobicity'] == 'High':
@@ -393,8 +393,8 @@ def display_peptide_analysis(peptide: Dict[str, Any], analysis_result: Dict[str,
     filtered_recommendations = summary['recommendations'].copy() if summary['recommendations'] else []
     
     # Remove stability-related recommendations if ExPASy shows good stability
-    if expasy_data:
-        stability = expasy_data['stability_analysis']
+    if expasy_data and expasy_data.get('success') and expasy_data.get('data', {}).get('stability_analysis'):
+        stability = expasy_data['data']['stability_analysis']
         if stability['risk_level'] == 'Low':
             filtered_recommendations = [r for r in filtered_recommendations if 'stability' not in r.lower() and 'stable' not in r.lower()]
     
@@ -403,29 +403,31 @@ def display_peptide_analysis(peptide: Dict[str, Any], analysis_result: Dict[str,
             st.write(f"• {rec}")
     
     # ExPASy-specific recommendations
-    if expasy_data:
+    if expasy_data and expasy_data.get('success') and expasy_data.get('data'):
         st.write("**🌐 ExPASy Stability Recommendations:**")
-        if expasy_data['recommendations']:
-            for rec in expasy_data['recommendations']:
+        if expasy_data['data'].get('recommendations'):
+            for rec in expasy_data['data']['recommendations']:
                 st.write(f"• {rec}")
         
         # Additional stability insights
-        stability = expasy_data['stability_analysis']
-        if stability['risk_level'] == 'Low':
-            st.write("• ✅ **Excellent stability profile** - suitable for experimental validation")
-        elif stability['risk_level'] == 'Medium':
-            st.write("• ⚠️ **Moderate stability** - consider optimization before experimental testing")
-        else:
-            st.write("• ❌ **High stability risk** - significant optimization required")
+        if expasy_data['data'].get('stability_analysis'):
+            stability = expasy_data['data']['stability_analysis']
+            if stability['risk_level'] == 'Low':
+                st.write("• ✅ **Excellent stability profile** - suitable for experimental validation")
+            elif stability['risk_level'] == 'Medium':
+                st.write("• ⚠️ **Moderate stability** - consider optimization before experimental testing")
+            else:
+                st.write("• ❌ **High stability risk** - significant optimization required")
         
         # Instability index insights
-        instability_index = expasy_data['basic_properties']['instability_index']
-        if instability_index > 40:
-            st.write("• ⚠️ **High instability index** - consider sequence modifications")
-        elif instability_index > 30:
-            st.write("• ⚠️ **Moderate instability** - monitor during experiments")
-        else:
-            st.write("• ✅ **Low instability index** - good stability characteristics")
+        if expasy_data['data'].get('basic_properties', {}).get('instability_index'):
+            instability_index = expasy_data['data']['basic_properties']['instability_index']
+            if instability_index > 40:
+                st.write("• ⚠️ **High instability index** - consider sequence modifications")
+            elif instability_index > 30:
+                st.write("• ⚠️ **Moderate instability** - monitor during experiments")
+            else:
+                st.write("• ✅ **Low instability index** - good stability characteristics")
 
 
 def main():
@@ -875,16 +877,16 @@ def main():
                                                 # Basic properties (local calculations)
                                                 col1, col2, col3, col4 = st.columns(4)
                                                 with col1:
-                                                    st.metric("Molecular Weight (Local)", f"{expasy_data['basic_properties']['molecular_weight']:.1f} Da")
+                                                    st.metric("Molecular Weight (Local)", f"{expasy_data['data']['basic_properties']['molecular_weight']:.1f} Da")
                                                 with col2:
-                                                    st.metric("Isoelectric Point (Local)", f"{expasy_data['basic_properties']['isoelectric_point']:.2f}")
+                                                    st.metric("Isoelectric Point (Local)", f"{expasy_data['data']['basic_properties']['isoelectric_point']:.2f}")
                                                 with col3:
-                                                    st.metric("GRAVY Score (Local)", f"{expasy_data['basic_properties']['gravy_score']:.3f}")
+                                                    st.metric("GRAVY Score (Local)", f"{expasy_data['data']['basic_properties']['gravy_score']:.3f}")
                                                 with col4:
-                                                    st.metric("Instability Index (ExPASy)", f"{expasy_data['basic_properties']['instability_index']:.1f}")
+                                                    st.metric("Instability Index (ExPASy)", f"{expasy_data['data']['basic_properties']['instability_index']:.1f}")
                                                 
                                                 # Stability analysis (ExPASy-based)
-                                                stability = expasy_data['stability_analysis']
+                                                stability = expasy_data['data']['stability_analysis']
                                                 st.subheader("🛡️ ExPASy Stability Assessment")
                                                 
                                                 col1, col2, col3 = st.columns(3)
@@ -893,7 +895,7 @@ def main():
                                                 with col2:
                                                     st.metric("Risk Level", stability['risk_level'])
                                                 with col3:
-                                                    st.metric("Aliphatic Index (ExPASy)", f"{expasy_data['basic_properties']['aliphatic_index']:.1f}")
+                                                    st.metric("Aliphatic Index (ExPASy)", f"{expasy_data['data']['basic_properties']['aliphatic_index']:.1f}")
                                                 
                                                 # Stability factors
                                                 st.subheader("📊 Stability Factors")
@@ -957,10 +959,10 @@ def main():
                                         expasy_comparison_data.append({
                                             'Peptide': f"Peptide {i}",
                                             'Sequence': peptide['sequence'],
-                                            'ExPASy Stability Score': expasy_data['stability_analysis']['stability_score'],
-                                            'ExPASy Risk Level': expasy_data['stability_analysis']['risk_level'],
-                                            'Instability Index (ExPASy)': expasy_data['basic_properties']['instability_index'],
-                                            'GRAVY Score (Local)': expasy_data['basic_properties']['gravy_score']
+                                            'ExPASy Stability Score': expasy_data['data']['stability_analysis']['stability_score'],
+                                            'ExPASy Risk Level': expasy_data['data']['stability_analysis']['risk_level'],
+                                            'Instability Index (ExPASy)': expasy_data['data']['basic_properties']['instability_index'],
+                                            'GRAVY Score (Local)': expasy_data['data']['basic_properties']['gravy_score']
                                         })
                         
                         if comparison_data:
