@@ -1365,7 +1365,7 @@ def main():
                                         
                                         # ExPASy analysis
                                         if include_expasy:
-                                            expasy_result = expasy_integration.analyze_protein(peptide['sequence'])
+                                            expasy_result = expasy_integration.analyze_peptide_stability(peptide['sequence'])
                                             result['expasy_data'] = expasy_result
                                         
                                         analysis_results.append(result)
