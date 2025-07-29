@@ -152,7 +152,15 @@ class HybridPeptideGenerator:
             peptide_id = f"PEP_{i+1:03d}"
             
             # Perform comprehensive analysis
-            analysis_result = self.analyzer.analyze_peptide(sequence)
+            analysis_result = self.analyzer.comprehensive_analysis(sequence)
+            
+            if not analysis_result['success']:
+                # Skip peptides that fail analysis
+                continue
+            
+            # Extract properties from analysis
+            analysis = analysis_result['analysis']
+            basic_props = analysis.get('basic_properties', {})
             
             # Combine original peptide data with analysis
             enhanced_peptide = peptide.copy()
@@ -161,16 +169,16 @@ class HybridPeptideGenerator:
                 'sequence': sequence,
                 'analysis': analysis_result,
                 'properties': {
-                    'molecular_weight': analysis_result.get('molecular_weight', 0),
-                    'isoelectric_point': analysis_result.get('isoelectric_point', 0),
-                    'gravy_score': analysis_result.get('gravy_score', 0),
-                    'net_charge': analysis_result.get('net_charge', 0),
-                    'instability_index': analysis_result.get('instability_index', 0),
-                    'aliphatic_index': analysis_result.get('aliphatic_index', 0),
-                    'hydrophobicity': analysis_result.get('hydrophobicity', 0),
-                    'solubility_score': analysis_result.get('solubility_score', 0),
-                    'aggregation_tendency': analysis_result.get('aggregation_tendency', 0),
-                    'binding_potential': analysis_result.get('binding_potential', 0)
+                    'molecular_weight': basic_props.get('molecular_weight', 0),
+                    'isoelectric_point': basic_props.get('isoelectric_point', 0),
+                    'gravy_score': basic_props.get('gravy_score', 0),
+                    'net_charge': basic_props.get('net_charge', 0),
+                    'instability_index': analysis.get('stability', {}).get('instability_index', 0),
+                    'aliphatic_index': basic_props.get('aliphatic_index', 0),
+                    'hydrophobicity': analysis.get('binding_affinity', {}).get('binding_score', 0),
+                    'solubility_score': analysis.get('solubility_profile', {}).get('solubility_score', 0),
+                    'aggregation_tendency': analysis.get('stability', {}).get('aggregation_risk', 0),
+                    'binding_potential': analysis.get('binding_affinity', {}).get('binding_score', 0)
                 }
             })
             
