@@ -36,6 +36,27 @@ class PepINVENTIntegration:
         self.pepinvent_path = pepinvent_path or "./PepINVENT"
         self.config_path = os.path.join(self.pepinvent_path, "data", "experiment_configurations")
         
+        # Check if running in Streamlit Cloud
+        self.is_cloud_environment = os.environ.get('STREAMLIT_SERVER_RUNNING', False)
+        if self.is_cloud_environment:
+            print("🌐 Cloud environment detected - using cloud-compatible PepINVENT mode")
+        
+        # Check for optional dependencies
+        self.has_rdkit = self._check_optional_dependency('rdkit')
+        self.has_torch = self._check_optional_dependency('torch')
+        self.has_transformers = self._check_optional_dependency('transformers')
+        
+        if not all([self.has_rdkit, self.has_torch, self.has_transformers]):
+            print("⚠️ Some PepINVENT dependencies not available - using cloud-compatible mode")
+    
+    def _check_optional_dependency(self, package_name: str) -> bool:
+        """Check if an optional dependency is available."""
+        try:
+            __import__(package_name)
+            return True
+        except ImportError:
+            return False
+        
     def check_installation(self) -> Dict[str, Any]:
         """
         Check if PepINVENT is properly installed and accessible.

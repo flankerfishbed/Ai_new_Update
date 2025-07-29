@@ -134,6 +134,26 @@ git push origin main
 - **Memory Limits**: Large proteins may be slower
 - **No GPU**: All processing is CPU-based
 - **Temporary Files**: All file operations are in-memory
+- **Dependencies**: Use `requirements-cloud.txt` for cloud deployment
+
+### Fixing Cloud Installation Errors
+
+If you encounter dependency installation errors on Streamlit Cloud:
+
+1. **Use Cloud-Compatible Requirements**:
+   ```bash
+   # Rename requirements for cloud deployment
+   cp requirements-cloud.txt requirements.txt
+   ```
+
+2. **Or manually exclude problematic dependencies**:
+   - Comment out `rdkit-pypi`, `torch`, and `transformers` in `requirements.txt`
+   - The app will automatically use cloud-compatible methods
+
+3. **Deploy with Cloud Mode**:
+   - The app automatically detects cloud environment
+   - PepINVENT will use cloud-compatible generation methods
+   - No external dependencies required
 
 ## 📊 Performance Optimization
 
