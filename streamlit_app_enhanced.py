@@ -1413,7 +1413,7 @@ def main():
                                     # Detailed analysis for each peptide
                                     for i, result in enumerate(analysis_results):
                                         peptide_name = result['peptide']['name'].replace(' ', '_').lower()
-                                        with st.expander(f"🔬 Detailed Analysis: {result['peptide']['name']}", key=f"custom_analysis_{peptide_name}_{i}"):
+                                        with st.expander(f"🔬 Detailed Analysis: {result['peptide']['name']}"):
                                             display_peptide_analysis(
                                                 result['peptide'], 
                                                 result['basic_analysis'], 
