@@ -477,49 +477,33 @@ def main():
             enable_pepinvent = st.checkbox("Enable PepINVENT", value=False, 
                                          help="Use PepINVENT for advanced peptide generation beyond natural amino acids")
             
-            if enable_pepinvent:
-                pepinvent_path = st.text_input("PepINVENT Path", value="./PepINVENT", 
-                                             help="Path to PepINVENT installation")
-                
-                generation_method = st.selectbox(
-                    "Generation Method",
-                    [
-                        "LLM-Based", 
-                        "PepINVENT Sampling", 
-                        "PepINVENT RL", 
-                        "Hybrid - Sequential Enhancement",
-                        "Hybrid - Parallel Generation", 
-                        "Hybrid - LLM-Guided PepINVENT",
-                        "Hybrid - PepINVENT-Enhanced LLM"
-                    ],
-                    help="Choose peptide generation method"
-                )
-                
-                # PepINVENT specific settings
-                if "PepINVENT" in generation_method:
-                    st.info("🌐 **PepINVENT Integration**: Generates peptides with non-natural amino acids using reinforcement learning.")
+            # PepINVENT Configuration
+            pepinvent_path = st.text_input("PepINVENT Path", value="./PepINVENT", 
+                                         help="Path to PepINVENT installation")
+            
+            st.info("🧬 **Hybrid Generation**: Combines PepINVENT and LLM for enhanced peptide design.")
+            
+            # Check if running in cloud environment
+            if os.environ.get('STREAMLIT_SERVER_RUNNING'):
+                st.info("☁️ **Cloud Mode**: Running in Streamlit Cloud - using cloud-compatible methods.")
+            
+            # Test PepINVENT installation
+            if st.button("🔍 Test PepINVENT Installation"):
+                with st.spinner("Testing PepINVENT installation..."):
+                    pepinvent = PepINVENTIntegration(pepinvent_path)
+                    result = pepinvent.check_installation()
                     
-                    # Check if running in cloud environment
-                    if os.environ.get('STREAMLIT_SERVER_RUNNING'):
-                        st.info("☁️ **Cloud Mode**: Running in Streamlit Cloud - using cloud-compatible PepINVENT methods.")
-                    
-                    # Test PepINVENT installation
-                    if st.button("🔍 Test PepINVENT Installation"):
-                        with st.spinner("Testing PepINVENT installation..."):
-                            pepinvent = PepINVENTIntegration(pepinvent_path)
-                            result = pepinvent.check_installation()
-                            
-                            if result['success']:
-                                st.success("✅ PepINVENT installation verified!")
-                                st.info(result['explanation'])
-                                
-                                # Show cloud mode info
-                                if result.get('cloud_mode'):
-                                    st.info("☁️ **Cloud Mode Active**: Using cloud-compatible peptide generation methods.")
-                            else:
-                                st.error("❌ PepINVENT installation failed!")
-                                st.error(result['error'])
-                                st.info("💡 Run `python setup_pepinvent.py` to install PepINVENT")
+                    if result['success']:
+                        st.success("✅ PepINVENT installation verified!")
+                        st.info(result['explanation'])
+                        
+                        # Show cloud mode info
+                        if result.get('cloud_mode'):
+                            st.info("☁️ **Cloud Mode Active**: Using cloud-compatible peptide generation methods.")
+                    else:
+                        st.error("❌ PepINVENT installation failed!")
+                        st.error(result['error'])
+                        st.info("💡 Run `python setup_pepinvent.py` to install PepINVENT")
             
             # Visualization options removed - 3D visualization disabled
             
@@ -656,141 +640,111 @@ def main():
             with tab2:
                 st.header("🧬 AI Peptide Generation")
                 
-                # Check if PepINVENT is enabled
-                if enable_pepinvent and 'generation_method' in locals():
-                    st.subheader("🌐 PepINVENT Advanced Generation")
-                    st.info("🌐 **PepINVENT Integration**: Generates peptides with non-natural amino acids using reinforcement learning.")
+                # Unified hybrid generation approach
+                if api_key:
+                    st.info("🧬 **Hybrid Generation**: Combining PepINVENT and LLM for enhanced peptide design with comprehensive analysis.")
                     
-                    if st.button("🚀 GENERATE WITH PEPINVENT", use_container_width=True):
-                        with st.spinner("Generating peptides with PepINVENT..."):
-                            try:
-                                pepinvent = PepINVENTIntegration(pepinvent_path)
-                                
-                                # Choose generation method
-                                if generation_method == "PepINVENT Sampling":
-                                    result = pepinvent.generate_peptides_sampling(
-                                        st.session_state['parsed_data']['sequence'],
-                                        num_peptides
-                                    )
-                                elif generation_method == "PepINVENT RL":
-                                    result = pepinvent.generate_peptides_rl(
-                                        st.session_state['parsed_data']['sequence'],
-                                        num_peptides
-                                    )
-                                else:  # Both methods
-                                    st.info("🔄 Generating with both sampling and RL methods...")
-                                    
-                                    # Generate with sampling
-                                    sampling_result = pepinvent.generate_peptides_sampling(
-                                        st.session_state['parsed_data']['sequence'],
-                                        num_peptides // 2
-                                    )
-                                    
-                                    # Generate with RL
-                                    rl_result = pepinvent.generate_peptides_rl(
-                                        st.session_state['parsed_data']['sequence'],
-                                        num_peptides - (num_peptides // 2)
-                                    )
-                                    
-                                    # Combine results
-                                    if sampling_result['success'] and rl_result['success']:
-                                        combined_peptides = sampling_result['peptides'] + rl_result['peptides']
-                                        result = {
-                                            'success': True,
-                                            'peptides': combined_peptides,
-                                            'method': 'PepINVENT Combined',
-                                            'explanation': f"Generated {len(combined_peptides)} peptides using both sampling and RL methods",
-                                            'metadata': {
-                                                'sampling_peptides': len(sampling_result['peptides']),
-                                                'rl_peptides': len(rl_result['peptides'])
-                                            }
-                                        }
-                                    elif sampling_result['success']:
-                                        result = sampling_result
-                                    elif rl_result['success']:
-                                        result = rl_result
-                                    else:
-                                        result = {
-                                            'success': False,
-                                            'error': "Both PepINVENT methods failed",
-                                            'explanation': "Neither sampling nor RL generation succeeded"
-                                        }
-                                
-                                if result['success']:
-                                    st.success(f"✅ Generated {len(result['peptides'])} PepINVENT peptides!")
-                                    st.session_state['peptides'] = result['peptides']
-                                    st.session_state['pepinvent_method'] = result['method']
-                                    
-                                    # Display PepINVENT peptides with enhanced info
-                                    st.subheader("Generated PepINVENT Peptide Candidates")
-                                    for i, peptide in enumerate(result['peptides'], 1):
-                                        # Check for non-natural amino acids
-                                        non_natural = peptide['properties'].get('non_natural_aa', [])
-                                        non_natural_badge = ""
-                                        if non_natural:
-                                            non_natural_badge = f"<span class='metric-badge'>Non-natural: {', '.join(non_natural)}</span>"
-                                        
-                                        st.markdown(f"""
-                                        <div class="peptide-card">
-                                            <div class="peptide-header">
-                                                <span class="peptide-sequence">PepINVENT Peptide {i}: {peptide['sequence']}</span>
-                                                {non_natural_badge}
-                                            </div>
-                                            <div class="peptide-content">
-                                                <div>
-                                                    <h5 style="color: #ffffff; margin-bottom: 0.5rem;">Properties:</h5>
-                                                    <ul style="color: rgba(255, 255, 255, 0.8);">
-                                                        <li><strong>Length:</strong> {peptide['properties']['length']}</li>
-                                                        <li><strong>Net Charge:</strong> {peptide['properties']['net_charge']}</li>
-                                                        <li><strong>Hydrophobicity:</strong> {peptide['properties']['hydrophobicity']}</li>
-                                                        <li><strong>Motifs:</strong> {', '.join(peptide['properties']['motifs'])}</li>
-                                                        <li><strong>Method:</strong> {peptide.get('method', 'PepINVENT')}</li>
-                                                    </ul>
-                                                </div>
-                                                <div>
-                                                    <h5 style="color: #ffffff; margin-bottom: 0.5rem;">Reasoning:</h5>
-                                                    <p style="color: rgba(255, 255, 255, 0.8); line-height: 1.6;">{peptide['explanation']}</p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        """, unsafe_allow_html=True)
-                                    
-                                else:
-                                    st.error(f"❌ PepINVENT generation failed: {result['error']}")
-                                    st.info(result.get('explanation', ''))
-                                    
-                            except Exception as e:
-                                st.error(f"❌ Error during PepINVENT generation: {str(e)}")
-                
-                # Hybrid generation methods
-                elif "Hybrid" in generation_method:
-                    st.info("🧬 **Hybrid Generation**: Combining PepINVENT and LLM for enhanced results.")
+                    # Generation settings
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        refinement_focus = st.selectbox(
+                            "Refinement Focus",
+                            ["balanced", "solubility", "stability", "binding"],
+                            help="Choose the primary focus for LLM refinement"
+                        )
+                        
+                        # Show refinement focus explanation
+                        focus_explanations = {
+                            "balanced": "🎯 **Balanced**: Optimizes across all properties (solubility, stability, binding) for well-rounded peptides",
+                            "solubility": "💧 **Solubility**: Focuses on improving aqueous solubility and reducing aggregation tendency",
+                            "stability": "🛡️ **Stability**: Prioritizes structural stability and resistance to degradation",
+                            "binding": "🔗 **Binding**: Optimizes for target protein binding affinity and specificity"
+                        }
+                        
+                        if refinement_focus in focus_explanations:
+                            st.info(focus_explanations[refinement_focus])
                     
-                    # Hybrid-specific settings
-                    refinement_focus = st.selectbox(
-                        "Refinement Focus",
-                        ["balanced", "solubility", "stability", "binding"],
-                        help="Choose the primary focus for LLM refinement"
+                    with col2:
+                        num_peptides = st.slider("Number of Peptides", 2, 5, 3, 
+                                               help="Number of peptides to generate and refine")
+                    
+                    # Strategy selection
+                    strategy = st.selectbox(
+                        "Generation Strategy",
+                        [
+                            "Sequential Enhancement (PepINVENT → LLM)",
+                            "Parallel Generation (Both → LLM Ranking)", 
+                            "LLM-Guided PepINVENT (LLM → PepINVENT)",
+                            "PepINVENT-Enhanced LLM (PepINVENT → LLM)"
+                        ],
+                        help="Choose how to combine PepINVENT and LLM approaches"
                     )
                     
-                    num_peptides = st.slider("Number of Peptides", 2, 5, 3, 
-                                           help="Number of peptides to generate and refine")
+                    # Map strategy to internal method
+                    strategy_map = {
+                        "Sequential Enhancement (PepINVENT → LLM)": "sequential",
+                        "Parallel Generation (Both → LLM Ranking)": "parallel", 
+                        "LLM-Guided PepINVENT (LLM → PepINVENT)": "llm_guided",
+                        "PepINVENT-Enhanced LLM (PepINVENT → LLM)": "enhanced_llm"
+                    }
                     
+                    selected_strategy = strategy_map.get(strategy, "parallel")
+                    
+                    # Display strategy explanation
+                    strategy_explanations = {
+                        "Sequential Enhancement (PepINVENT → LLM)": {
+                            "title": "🔄 Sequential Enhancement",
+                            "description": "Uses PepINVENT to generate initial peptides with non-natural amino acids, then applies LLM analysis to enhance and optimize the sequences.",
+                            "workflow": "PepINVENT Generation → Property Analysis → LLM Enhancement → Improved Peptides",
+                            "benefits": "• Leverages PepINVENT's chemical diversity\n• LLM provides detailed reasoning for improvements\n• Best for exploring novel amino acid combinations"
+                        },
+                        "Parallel Generation (Both → LLM Ranking)": {
+                            "title": "⚖️ Parallel Generation",
+                            "description": "Generates peptides using both PepINVENT and LLM methods simultaneously, then uses LLM to rank and select the best candidates from both sources.",
+                            "workflow": "PepINVENT + LLM Generation → Property Analysis → LLM Ranking → Top Candidates",
+                            "benefits": "• Maximizes diversity of peptide candidates\n• LLM provides unbiased ranking\n• Best for comprehensive candidate selection"
+                        },
+                        "LLM-Guided PepINVENT (LLM → PepINVENT)": {
+                            "title": "🧠 LLM-Guided PepINVENT",
+                            "description": "Uses LLM to analyze protein structure and suggest target regions, then guides PepINVENT generation to focus on those specific areas.",
+                            "workflow": "LLM Protein Analysis → PepINVENT Targeted Generation → LLM Interpretation",
+                            "benefits": "• LLM provides structural insights\n• PepINVENT focuses on promising regions\n• Best for targeted binding optimization"
+                        },
+                        "PepINVENT-Enhanced LLM (PepINVENT → LLM)": {
+                            "title": "🧬 PepINVENT-Enhanced LLM",
+                            "description": "Uses PepINVENT's chemical knowledge (non-natural amino acids, modifications) to enhance LLM prompts, resulting in more innovative peptide designs.",
+                            "workflow": "PepINVENT Chemical Insights → Enhanced LLM Prompts → Innovative Peptides",
+                            "benefits": "• Incorporates advanced chemical knowledge\n• LLM generates more diverse sequences\n• Best for exploring chemical modifications"
+                        }
+                    }
+                    
+                    # Show explanation for selected strategy
+                    if strategy in strategy_explanations:
+                        explanation = strategy_explanations[strategy]
+                        st.markdown(f"""
+                        <div style="background: rgba(99, 102, 241, 0.1); border: 1px solid rgba(99, 102, 241, 0.3); border-radius: 8px; padding: 16px; margin: 16px 0;">
+                            <h4 style="color: #6366f1; margin-bottom: 8px;">{explanation['title']}</h4>
+                            <p style="color: rgba(255, 255, 255, 0.9); margin-bottom: 12px;">{explanation['description']}</p>
+                            <div style="background: rgba(255, 255, 255, 0.05); border-radius: 6px; padding: 12px; margin-bottom: 12px;">
+                                <strong style="color: #6366f1;">Workflow:</strong> {explanation['workflow']}
+                            </div>
+                            <div style="color: rgba(255, 255, 255, 0.8);">
+                                <strong style="color: #6366f1;">Benefits:</strong>
+                                <div style="margin-left: 16px; margin-top: 4px;">{explanation['benefits']}</div>
+                            </div>
+                        </div>
+                        """, unsafe_allow_html=True)
+                    
+                    # Single generate button
                     if st.button("🚀 GENERATE HYBRID PEPTIDES", use_container_width=True):
                         with st.spinner("Generating and refining peptides with hybrid approach..."):
                             try:
+                                # Initialize LLM provider
+                                llm_factory = LLMProviderFactory()
+                                llm_provider = llm_factory.create_provider(provider_name, api_key, model_name)
+                                
                                 # Initialize hybrid generator
                                 hybrid_generator = HybridPeptideGenerator(llm_provider, pepinvent_path)
-                                
-                                # Map generation method to strategy
-                                strategy_map = {
-                                    "Hybrid - Sequential Enhancement": "sequential",
-                                    "Hybrid - Parallel Generation": "parallel", 
-                                    "Hybrid - LLM-Guided PepINVENT": "llm_guided",
-                                    "Hybrid - PepINVENT-Enhanced LLM": "enhanced_llm"
-                                }
-                                
-                                strategy = strategy_map.get(generation_method, "parallel")
                                 
                                 # Prepare context data
                                 context_data = {
@@ -848,6 +802,8 @@ def main():
                                                 </div>
                                                 <div class="peptide-content">
                                                     <div>
+                                                        <h5 style="color: #ffffff; margin-bottom: 0.5rem;">Original:</h5>
+                                                        <p style="color: rgba(255, 255, 255, 0.8);">{candidate['original_sequence']}</p>
                                                         <h5 style="color: #ffffff; margin-bottom: 0.5rem;">Improvements:</h5>
                                                         <ul style="color: rgba(255, 255, 255, 0.8);">
                                                             {''.join([f'<li>{imp}</li>' for imp in candidate['improvements']])}
@@ -861,74 +817,15 @@ def main():
                                             </div>
                                             """, unsafe_allow_html=True)
                                     
+                                    # Show comparison tab info
+                                    st.info("📈 **View detailed comparison**: Go to the 'Comparison' tab to see side-by-side analysis of original vs refined peptides.")
+                                    
                                 else:
                                     st.error(f"❌ Hybrid generation failed: {hybrid_result['error']}")
                                     st.info(hybrid_result['explanation'])
                                     
                             except Exception as e:
                                 st.error(f"❌ Error during hybrid generation: {str(e)}")
-                
-                # Standard LLM-based generation
-                st.subheader("🤖 LLM-Based Generation")
-                if api_key:
-                    st.markdown("**Click the button below to generate AI-suggested peptide candidates:**")
-                    if st.button("🚀 GENERATE PEPTIDE CANDIDATES", use_container_width=True):
-                        with st.spinner("Generating peptide candidates..."):
-                            try:
-                                llm_factory = LLMProviderFactory()
-                                llm_provider = llm_factory.create_provider(provider_name, api_key, model_name)
-                                generator = PeptideGenerator(llm_provider)
-                                
-                                context_data = {
-                                    'sequence': st.session_state['parsed_data']['sequence'],
-                                    'residues': st.session_state['parsed_data']['residues'],
-                                    'chain_id': chain_id,
-                                    'num_peptides': num_peptides
-                                }
-                                
-                                # Add surface data if available
-                                if 'surface_data' in st.session_state:
-                                    context_data['surface_data'] = st.session_state['surface_data']
-                                
-                                # Interaction data removed for simplified visualization
-                                
-                                peptides_result = generator.generate_peptides(context_data)
-                                
-                                if peptides_result['success']:
-                                    st.success(f"✅ Generated {len(peptides_result['peptides'])} peptide candidates!")
-                                    st.session_state['peptides'] = peptides_result['peptides']
-                                    
-                                    # Display peptides
-                                    st.subheader("Generated Peptide Candidates")
-                                    for i, peptide in enumerate(peptides_result['peptides'], 1):
-                                        st.markdown(f"""
-                                        <div class="peptide-card">
-                                            <div class="peptide-header">
-                                                <span class="peptide-sequence">Peptide {i}: {peptide['sequence']}</span>
-                                            </div>
-                                            <div class="peptide-content">
-                                                <div>
-                                                    <h5 style="color: #ffffff; margin-bottom: 0.5rem;">Properties:</h5>
-                                                    <ul style="color: rgba(255, 255, 255, 0.8);">
-                                                        <li><strong>Length:</strong> {peptide['properties']['length']}</li>
-                                                        <li><strong>Net Charge:</strong> {peptide['properties']['net_charge']}</li>
-                                                        <li><strong>Hydrophobicity:</strong> {peptide['properties']['hydrophobicity']}</li>
-                                                        <li><strong>Motifs:</strong> {', '.join(peptide['properties']['motifs'])}</li>
-                                                    </ul>
-                                                </div>
-                                                <div>
-                                                    <h5 style="color: #ffffff; margin-bottom: 0.5rem;">Reasoning:</h5>
-                                                    <p style="color: rgba(255, 255, 255, 0.8); line-height: 1.6;">{peptide['explanation']}</p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        """, unsafe_allow_html=True)
-                                    
-                                else:
-                                    st.error(f"❌ Peptide generation failed: {peptides_result['error']}")
-                                    
-                            except Exception as e:
-                                st.error(f"❌ Error during peptide generation: {str(e)}")
                 else:
                     st.info("ℹ️ Please enter your API key in the sidebar to generate peptides.")
             

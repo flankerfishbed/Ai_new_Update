@@ -83,12 +83,12 @@ A comprehensive computational biology platform for AI-driven peptide design and 
 - **Advanced Analysis**: Enable surface analysis, interaction analysis, etc.
 
 ### 3. Generate Peptides
-- **Standard Generation**: Enter your API key for the chosen LLM provider
-- **PepINVENT Generation**: Use reinforcement learning with non-natural amino acids
-- **Hybrid Generation**: Combine PepINVENT and LLM for enhanced results
+- **Unified Hybrid Generation**: Single button combines PepINVENT and LLM for enhanced results
   - Choose refinement focus (solubility, stability, binding, balanced)
-  - Select number of peptides (2-5)
-  - View side-by-side comparison of original vs refined peptides
+  - Select generation strategy (Sequential, Parallel, LLM-Guided, PepINVENT-Enhanced)
+  - Set number of peptides (2-5)
+  - View top candidates with improvement scores
+  - Access detailed side-by-side comparison in the Comparison tab
 - Review AI-generated peptides with detailed reasoning
 
 ### 4. Advanced Analysis
@@ -167,6 +167,8 @@ new-peptides/
 - **Parallel Generation**: Both methods → LLM Ranking → Best Candidates
 - **LLM-Guided PepINVENT**: LLM Analysis → PepINVENT Generation → Interpretation
 - **PepINVENT-Enhanced LLM**: PepINVENT Insights → Enhanced LLM Prompts
+- **Dynamic Explanations**: Real-time strategy descriptions with workflow and benefits
+- **Refinement Focus**: Choose optimization target (balanced, solubility, stability, binding)
 - **Side-by-Side Comparison**: Original vs Refined peptides with detailed analysis
 - **Property Tracking**: Comprehensive biochemical property analysis and improvement tracking
 
