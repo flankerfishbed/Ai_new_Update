@@ -46,8 +46,12 @@ class PepINVENTIntegration:
         self.has_torch = self._check_optional_dependency('torch')
         self.has_transformers = self._check_optional_dependency('transformers')
         
-        if not all([self.has_rdkit, self.has_torch, self.has_transformers]):
-            print("⚠️ Some PepINVENT dependencies not available - using cloud-compatible mode")
+        # Always use cloud-compatible mode on Streamlit Cloud
+        if self.is_cloud_environment or not all([self.has_rdkit, self.has_torch, self.has_transformers]):
+            print("🌐 Cloud-compatible PepINVENT mode enabled")
+            self.cloud_mode = True
+        else:
+            self.cloud_mode = False
     
     def _check_optional_dependency(self, package_name: str) -> bool:
         """Check if an optional dependency is available."""
@@ -65,7 +69,7 @@ class PepINVENTIntegration:
             Dictionary with installation status and details
         """
         # Cloud environment check
-        if self.is_cloud_environment:
+        if self.is_cloud_environment or getattr(self, 'cloud_mode', False):
             return {
                 'success': True,
                 'explanation': "PepINVENT cloud-compatible mode enabled",
@@ -156,7 +160,7 @@ class PepINVENTIntegration:
             Dictionary with success status, peptides, and explanation
         """
         # Cloud-compatible generation
-        if self.is_cloud_environment:
+        if self.is_cloud_environment or getattr(self, 'cloud_mode', False):
             return self._generate_peptides_cloud(protein_sequence, num_peptides, "sampling")
         
         try:
@@ -261,7 +265,7 @@ class PepINVENTIntegration:
             Dictionary with success status, peptides, and explanation
         """
         # Cloud-compatible generation
-        if self.is_cloud_environment:
+        if self.is_cloud_environment or getattr(self, 'cloud_mode', False):
             return self._generate_peptides_cloud(protein_sequence, num_peptides, "rl")
         
         try:

@@ -13,7 +13,6 @@ openai>=1.0.0
 anthropic>=0.7.0
 groq>=0.4.0
 mistralai>=0.0.10
-# Cloud-compatible PepINVENT dependencies (optional)
-# rdkit-pypi>=2023.9.1  # Commented out for cloud compatibility
-# torch>=2.0.0          # Commented out for cloud compatibility
-# transformers>=4.30.0  # Commented out for cloud compatibility 
+
+# Note: rdkit-pypi, torch, and transformers are excluded for cloud compatibility
+# The app will automatically use cloud-compatible PepINVENT methods 
