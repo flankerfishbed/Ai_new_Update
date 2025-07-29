@@ -62,7 +62,6 @@ class HybridPeptideGenerator:
         """
         try:
             # Step 1: Generate peptides with PepINVENT
-            st.info("🧬 **Step 1**: Generating peptides with PepINVENT...")
             pepinvent_result = self.pepinvent.generate_peptides_sampling(
                 context_data['sequence'],
                 num_peptides
@@ -76,13 +75,11 @@ class HybridPeptideGenerator:
                 }
             
             # Step 2: Analyze properties of original peptides
-            st.info("🔬 **Step 2**: Analyzing biochemical properties...")
             original_peptides_with_properties = self._analyze_peptide_properties(
                 pepinvent_result['peptides']
             )
             
             # Step 3: Use LLM to generate refined peptides
-            st.info("🤖 **Step 3**: Generating refined peptides with LLM...")
             refinement_result = self._generate_refined_peptides(
                 original_peptides_with_properties, 
                 context_data, 
@@ -97,13 +94,11 @@ class HybridPeptideGenerator:
                 }
             
             # Step 4: Analyze properties of refined peptides
-            st.info("🔬 **Step 4**: Analyzing refined peptide properties...")
             refined_peptides_with_properties = self._analyze_peptide_properties(
                 refinement_result['peptides']
             )
             
             # Step 5: Create comprehensive comparison
-            st.info("📊 **Step 5**: Creating side-by-side comparison...")
             comparison_data = self._create_comparison_data(
                 original_peptides_with_properties,
                 refined_peptides_with_properties
