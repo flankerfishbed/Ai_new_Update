@@ -47,21 +47,23 @@ def inject_enhanced_css():
         .peptide-sequence { font-family: 'Courier New', monospace; font-size: 1.1rem; font-weight: 600; color: #6366f1; margin-right: 1rem; }
         .peptide-content { display: flex; flex-direction: column; gap: 1.5rem; width: 100%; }
         .ai-reasoning { 
-            background: rgba(99, 102, 241, 0.1); 
-            border-left: 4px solid #6366f1; 
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%); 
+            border-left: 4px solid #00d4ff; 
             padding: 1.5rem; 
-            border-radius: 8px; 
+            border-radius: 12px; 
             margin: 1rem 0; 
             font-size: 1.05rem; 
             line-height: 1.8; 
-            color: rgba(255, 255, 255, 0.9); 
+            color: #ffffff; 
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
         }
         .ai-reasoning-header { 
             display: flex; 
             align-items: center; 
             margin-bottom: 1rem; 
             font-weight: 600; 
-            color: #6366f1; 
+            color: #00d4ff; 
+            font-size: 1.1rem;
         }
         .peptide-properties { 
             display: flex; 
@@ -70,11 +72,13 @@ def inject_enhanced_css():
             margin-top: 1rem; 
         }
         .property-badge { 
-            background: rgba(255, 255, 255, 0.1); 
+            background: linear-gradient(135deg, #333333 0%, #444444 100%); 
             padding: 0.25rem 0.75rem; 
             border-radius: 20px; 
             font-size: 0.85rem; 
-            color: rgba(255, 255, 255, 0.8); 
+            color: #ffffff; 
+            border: 1px solid #555555;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
         }
         .dataframe { background: rgba(255,255,255,0.05); border-radius: 12px; overflow: hidden; width: 100%; }
         
