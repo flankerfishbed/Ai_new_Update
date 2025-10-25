@@ -33,7 +33,7 @@ def inject_enhanced_css():
     st.markdown("""
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-        .main { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%); color: #ffffff; }
+        .main { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: #000000; color: #ffffff; }
         .main-container { max-width: 1800px; margin: 0 auto; padding: 0 2vw; background: transparent; }
         .upload-area { border: 2px dashed #00d4ff; border-radius: 12px; padding: 3rem 2rem; text-align: center; background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%); margin: 1rem 0; width: 100%; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3); }
         .upload-text { color: #ffffff; font-size: 1.1rem; margin-bottom: 1rem; }
