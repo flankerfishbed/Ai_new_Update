@@ -33,18 +33,18 @@ def inject_enhanced_css():
     st.markdown("""
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-        .main { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; }
-        .main-container { max-width: 1800px; margin: 0 auto; padding: 0 2vw; }
-        .upload-area { border: 2px dashed rgba(255,255,255,0.3); border-radius: 12px; padding: 3rem 2rem; text-align: center; background: rgba(255,255,255,0.02); margin: 1rem 0; width: 100%; }
-        .upload-text { color: rgba(255,255,255,0.7); font-size: 1.1rem; margin-bottom: 1rem; }
+        .main { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%); color: #ffffff; }
+        .main-container { max-width: 1800px; margin: 0 auto; padding: 0 2vw; background: transparent; }
+        .upload-area { border: 2px dashed #00d4ff; border-radius: 12px; padding: 3rem 2rem; text-align: center; background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%); margin: 1rem 0; width: 100%; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3); }
+        .upload-text { color: #ffffff; font-size: 1.1rem; margin-bottom: 1rem; }
         .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin: 1.5rem 0; width: 100%; }
-        .kpi-tile { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 1.5rem; text-align: center; box-shadow: rgba(0,0,0,0.1) 0 2px 8px; }
-        .kpi-value { font-size: 2rem; font-weight: 700; color: #6366f1; margin-bottom: 0.5rem; }
-        .kpi-label { font-size: 0.875rem; color: rgba(255,255,255,0.7); font-weight: 500; }
-        .sequence-display { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 1.5rem; font-family: 'Courier New', monospace; font-size: 0.9rem; overflow-x: auto; color: #6366f1; }
-        .peptide-card { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 1.5rem; margin: 1rem 0; box-shadow: rgba(0,0,0,0.1) 0 2px 8px; width: 100%; }
+        .kpi-tile { background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%); border: 1px solid #00d4ff; border-radius: 12px; padding: 1.5rem; text-align: center; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3); }
+        .kpi-value { font-size: 2rem; font-weight: 700; color: #00d4ff; margin-bottom: 0.5rem; }
+        .kpi-label { font-size: 0.875rem; color: #ffffff; font-weight: 500; }
+        .sequence-display { background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%); border: 1px solid #00d4ff; border-radius: 12px; padding: 1.5rem; font-family: 'Courier New', monospace; font-size: 0.9rem; overflow-x: auto; color: #00d4ff; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3); }
+        .peptide-card { background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%); border: 1px solid #00d4ff; border-radius: 16px; padding: 1.5rem; margin: 1rem 0; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3); width: 100%; }
         .peptide-header { display: flex; align-items: center; margin-bottom: 1rem; }
-        .peptide-sequence { font-family: 'Courier New', monospace; font-size: 1.1rem; font-weight: 600; color: #6366f1; margin-right: 1rem; }
+        .peptide-sequence { font-family: 'Courier New', monospace; font-size: 1.1rem; font-weight: 600; color: #00d4ff; margin-right: 1rem; }
         .peptide-content { display: flex; flex-direction: column; gap: 1.5rem; width: 100%; }
         .ai-reasoning { 
             background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%); 
@@ -80,43 +80,48 @@ def inject_enhanced_css():
             border: 1px solid #555555;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
         }
-        .dataframe { background: rgba(255,255,255,0.05); border-radius: 12px; overflow: hidden; width: 100%; }
+        .dataframe { background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%); border: 1px solid #00d4ff; border-radius: 12px; overflow: hidden; width: 100%; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3); }
         
         /* Enhanced generate button */
         .stButton > button {
-            background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
-            color: white;
-            border: none;
+            background: linear-gradient(135deg, #00d4ff 0%, #0099cc 100%);
+            color: #000000;
+            border: 2px solid #00d4ff;
             border-radius: 50px;
             padding: 1rem 3rem;
             font-weight: 700;
             font-size: 1.1rem;
             transition: all 0.3s ease;
-            box-shadow: rgba(99, 102, 241, 0.3) 0 4px 16px;
+            box-shadow: 0 4px 16px rgba(0, 212, 255, 0.3);
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
         
         .stButton > button:hover {
-            background: linear-gradient(135deg, #4f46e5 0%, #3730a3 100%);
+            background: linear-gradient(135deg, #0099cc 0%, #006699 100%);
             transform: translateY(-2px);
-            box-shadow: rgba(99, 102, 241, 0.4) 0 8px 24px;
+            box-shadow: 0 8px 24px rgba(0, 212, 255, 0.4);
+            color: #ffffff;
         }
         
         /* Analysis tabs */
         .analysis-tabs {
-            background: rgba(255,255,255,0.05);
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+            border: 1px solid #00d4ff;
             border-radius: 12px;
             padding: 1rem;
             margin: 1rem 0;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
         }
         
         /* Progress indicators */
         .progress-container {
-            background: rgba(255,255,255,0.05);
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+            border: 1px solid #00d4ff;
             border-radius: 12px;
             padding: 1rem;
             margin: 1rem 0;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
         }
         
         /* Comparative analysis */
@@ -129,30 +134,34 @@ def inject_enhanced_css():
         
         /* Enhanced peptide cards */
         .enhanced-peptide-card {
-            background: rgba(255,255,255,0.05);
-            border: 1px solid rgba(255,255,255,0.1);
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+            border: 1px solid #00d4ff;
             border-radius: 16px;
             padding: 2rem;
             margin: 1.5rem 0;
-            box-shadow: rgba(0,0,0,0.1) 0 4px 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
         }
         
         .analysis-section {
-            background: rgba(255,255,255,0.03);
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+            border: 1px solid #00d4ff;
             border-radius: 12px;
             padding: 1.5rem;
             margin: 1rem 0;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
         }
         
         .metric-badge {
             display: inline-block;
-            background: rgba(99, 102, 241, 0.2);
-            color: #6366f1;
+            background: linear-gradient(135deg, #333333 0%, #444444 100%);
+            color: #00d4ff;
             padding: 0.25rem 0.75rem;
             border-radius: 20px;
             font-size: 0.8rem;
             font-weight: 600;
             margin: 0.25rem;
+            border: 1px solid #00d4ff;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
         }
         
         @media (max-width: 900px) { 
