@@ -45,7 +45,37 @@ def inject_enhanced_css():
         .peptide-card { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 1.5rem; margin: 1rem 0; box-shadow: rgba(0,0,0,0.1) 0 2px 8px; width: 100%; }
         .peptide-header { display: flex; align-items: center; margin-bottom: 1rem; }
         .peptide-sequence { font-family: 'Courier New', monospace; font-size: 1.1rem; font-weight: 600; color: #6366f1; margin-right: 1rem; }
-        .peptide-content { display: grid; grid-template-columns: 1fr 2fr; gap: 1.5rem; width: 100%; }
+        .peptide-content { display: flex; flex-direction: column; gap: 1.5rem; width: 100%; }
+        .ai-reasoning { 
+            background: rgba(99, 102, 241, 0.1); 
+            border-left: 4px solid #6366f1; 
+            padding: 1.5rem; 
+            border-radius: 8px; 
+            margin: 1rem 0; 
+            font-size: 1.05rem; 
+            line-height: 1.8; 
+            color: rgba(255, 255, 255, 0.9); 
+        }
+        .ai-reasoning-header { 
+            display: flex; 
+            align-items: center; 
+            margin-bottom: 1rem; 
+            font-weight: 600; 
+            color: #6366f1; 
+        }
+        .peptide-properties { 
+            display: flex; 
+            flex-wrap: wrap; 
+            gap: 0.5rem; 
+            margin-top: 1rem; 
+        }
+        .property-badge { 
+            background: rgba(255, 255, 255, 0.1); 
+            padding: 0.25rem 0.75rem; 
+            border-radius: 20px; 
+            font-size: 0.85rem; 
+            color: rgba(255, 255, 255, 0.8); 
+        }
         .dataframe { background: rgba(255,255,255,0.05); border-radius: 12px; overflow: hidden; width: 100%; }
         
         /* Enhanced generate button */
@@ -640,18 +670,17 @@ def main():
                                                 <span class="peptide-sequence">Peptide {i}: {peptide['sequence']}</span>
                                             </div>
                                             <div class="peptide-content">
-                                                <div>
-                                                    <h5 style="color: #ffffff; margin-bottom: 0.5rem;">Properties:</h5>
-                                                    <ul style="color: rgba(255, 255, 255, 0.8);">
-                                                        <li><strong>Length:</strong> {peptide['properties']['length']}</li>
-                                                        <li><strong>Net Charge:</strong> {peptide['properties']['net_charge']}</li>
-                                                        <li><strong>Hydrophobicity:</strong> {peptide['properties']['hydrophobicity']}</li>
-                                                        <li><strong>Motifs:</strong> {', '.join(peptide['properties']['motifs'])}</li>
-                                                    </ul>
+                                                <div class="ai-reasoning">
+                                                    <div class="ai-reasoning-header">
+                                                        🤖 AI Reasoning
+                                                    </div>
+                                                    <p>{peptide['explanation']}</p>
                                                 </div>
-                                                <div>
-                                                    <h5 style="color: #ffffff; margin-bottom: 0.5rem;">Reasoning:</h5>
-                                                    <p style="color: rgba(255, 255, 255, 0.8); line-height: 1.6;">{peptide['explanation']}</p>
+                                                <div class="peptide-properties">
+                                                    <span class="property-badge">Length: {peptide['properties']['length']}</span>
+                                                    <span class="property-badge">Net Charge: {peptide['properties']['net_charge']}</span>
+                                                    <span class="property-badge">Hydrophobicity: {peptide['properties']['hydrophobicity']}</span>
+                                                    <span class="property-badge">Motifs: {', '.join(peptide['properties']['motifs'])}</span>
                                                 </div>
                                             </div>
                                         </div>
